@@ -19,9 +19,11 @@ project = 'qualitas_corpus_clean'
 
 def single_execution():
     for combination in combinations:
-        execute_siamese_index_properties(combination)
+        if combination[0] in [4,6,8,22,24]:
+            continue
 
-
+        if combination[0] % 2 == 0:
+            execute_siamese_index_properties(combination)
 
 def multiple_execution():
     batch_size = 2
@@ -56,13 +58,13 @@ def execute_siamese_index_properties(combination):
     print(f'CONFIG NAME: {config_name} \n\n')
     new_config = f'{destination_file}/n_gram_{r1}.properties'
     open(new_config, 'w').write(config)
-    command = f'cd Siamese-main && java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ./my_index/{project}/ -cf ../{new_config}'
+    command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ../siamese-optimization/Siamese/my_index/{project} -cf {new_config}'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()
 
-combinations = [(i,i,i) for i in range(1,25)][14:18]
-complete_path = '/home/denis/Hyperparameter-Optimization-Siamese/n-gram-properties'
+combinations = [(i,i,i) for i in range(1,25)][4:]
+#combinations = [(24,24,24),(22,22,22),(4,4,4),(6,6,6),(8,8,8)]
 
 single_execution()
-# multiple_execution()
+#multiple_execution()
 
