@@ -9,21 +9,14 @@ The query reduction thresholds should be somewhere around 1-15%
 '''
 
 import subprocess
-from itertools import product
 import threading
-import os
-from siamese_operations import execute_index_siamese
-import shutil
+from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach
 
 project = 'qualitas_corpus_clean'
 
 def single_execution():
     for combination in combinations:
-        if combination[0] in [4,6,8,22,24]:
-            continue
-
-        if combination[0] % 2 == 0:
-            execute_siamese_index_properties(combination)
+        execute_siamese_index_properties(combination)
 
 def multiple_execution():
     batch_size = 2
@@ -47,23 +40,33 @@ def execute_siamese_index_properties(combination):
     r1 = combination[0]
     r2 = combination[1]
     r3 = combination[2]
-    
-    destination_file = './n-gram-properties'
+    ngram = r1
+
+    execute_cluster_elasticserach(ngram)    
+
+    n_gram_properties_path = './n-gram-properties'
+    elasticsearch_path = '/home/denis/programming/siamese-optmization/elasticsearch-siamese'
+    elasticsearch_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}'
+
+
     config = open('index-config.properties', 'r').read()
-    config = config.replace('t1NgramSize=4', f't1NgramSize={r1}')
-    config = config.replace('t2NgramSize=4', f't2NgramSize={r2}')
-    config = config.replace('ngramSize=4', f'ngramSize={r3}')
-    config_name = f'qualitas_corpus_n_gram_{r1}'
+    config = config.replace('elasticsearchLoc=elasticsearchLoc', f'elasticsearchLoc={elasticsearch_path}')
+    config = config.replace('cluster=cluster', f'cluster=cluster-ngram-{ngram}')
+    config = config.replace('t1NgramSize=4', f't1NgramSize={ngram}')
+    config = config.replace('t2NgramSize=4', f't2NgramSize={ngram}')
+    config = config.replace('ngramSize=4', f'ngramSize={ngram}')
+    config_name = f'qualitas_corpus_n_gram_{ngram}'
     config = config.replace('index=qualitas_corpus_clean', f'index={config_name}')
     print(f'CONFIG NAME: {config_name} \n\n')
-    new_config = f'{destination_file}/n_gram_{r1}.properties'
+    new_config = f'{n_gram_properties_path}/n_gram_{ngram}.properties'
     open(new_config, 'w').write(config)
-    command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ../siamese-optimization/Siamese/my_index/{project} -cf {new_config}'
+    command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ../siamese-optmization/Siamese/my_index/{project} -cf {new_config}'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()
 
-combinations = [(i,i,i) for i in range(1,25)][4:]
-#combinations = [(24,24,24),(22,22,22),(4,4,4),(6,6,6),(8,8,8)]
+    stop_cluster_elasticserach(ngram) 
+
+combinations = [(i,i,i) for i in range(4,25)]
 
 single_execution()
 #multiple_execution()
