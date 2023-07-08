@@ -58,7 +58,6 @@ evaluate_tool(combination)
 count = 0
 for i, combination in enumerate(combinations):
     count += 1
-
     print(f"Count {i}")
     print(f"Combination {combination}")
     evaluate_tool(combination)

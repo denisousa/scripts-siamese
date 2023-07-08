@@ -18,7 +18,7 @@ def create_clusters_elasticserach():
 def execute_cluster_elasticserach(ngram):
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
     command_execute = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/bin/elasticsearch -d'
-    print(f'EXECUTING elasticsearch-ngram-{ngram} NOW')
+    print(f'EXECUTING elasticsearch-ngram-{ngram}')
     os.system(command_execute)
     sleep(6)
     #process = subprocess.Popen(command_execute, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
@@ -28,7 +28,7 @@ def stop_cluster_elasticserach(ngram):
     for ngram_i, port in zip(range(4,24), range(9200,9221)):
         if ngram_i == ngram:
             command_stop = f'sudo kill $(sudo lsof -t -i :{port})'
-            print(f'STOP elasticsearch-ngram-{ngram} NOW')
+            print(f'STOP elasticsearch-ngram-{ngram}')
             os.system(command_stop)
 
 def change_cluster_name(ngram_size):

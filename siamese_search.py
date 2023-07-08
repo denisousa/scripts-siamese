@@ -1,6 +1,7 @@
 import subprocess
 import os
 import pandas as pd
+from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach
 from siamese_operations import format_siamese_output
 from confusion_matrix import generate_confusion_matrix
 from oracle_operations import filter_oracle
@@ -56,6 +57,8 @@ def generate_config_file(parms):
     return properties_path
 
 def execute_siamese_search(**parms):
+    execute_cluster_elasticserach(parms["ngramSize"])
+
     project = 'stackoverflow_filtered'
     output_path = '/home/denis/Hyperparameter-Optimization-Siamese/Siamese-main/output'
     properties_path = generate_config_file(parms)
@@ -63,9 +66,12 @@ def execute_siamese_search(**parms):
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()
     check_siamese_execution(process)
+
+    stop_cluster_elasticserach(parms["ngramSize"])
     most_recent_siamese_output = most_recent_file(output_path)
     df_siamese = format_siamese_output(output_path, most_recent_siamese_output)
-    df_siamese.to_csv('df_siamese_formatted.csv', index=False)
     df_clones = pd.read_csv('clones.csv')
     df_clones = filter_oracle(df_clones)
+    
+
     return generate_confusion_matrix(df_siamese, df_clones)

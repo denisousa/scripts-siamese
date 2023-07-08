@@ -63,6 +63,9 @@ def check_clone_is_correct(oracle_row, siamese_row):
     return False
 
 def calculate_mrr(df_siamese, df_clones):
+    # File1 -> Stackoverflow
+    # File2 -> Qualitas Corpus
+    
     mrr = 0
     so_snippets = list(df_siamese.drop_duplicates(subset='file1')['file1'])
     len_so_snippets = len(so_snippets)
@@ -72,7 +75,7 @@ def calculate_mrr(df_siamese, df_clones):
         oracle_filtered_df.reset_index(drop=True, inplace=True)
         
         if oracle_filtered_df.shape[0] == 0:
-            mrr += 1 # Estou assumindo que o Siamese sempre acerta (1) algo fora do oráculo
+            mrr += 1 # Estou assumindo 1 ao MRR quando o Siamese acerta um clone fora do oráculo
             continue
         
         siamese_row = df_siamese.loc[df_siamese['file1'] == so_snippet].iloc[0]
