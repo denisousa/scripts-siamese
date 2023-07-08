@@ -23,7 +23,7 @@ def evaluate_tool(parms):
     recall, precision, f1_score = execute_siamese_search(**parms)
     check.append({'recall': recall, 'precision': precision, 'f1_score': f1_score, 'parms': parms})
 
-dimensions=[[4, 14],
+dimensions=[[4, 24],
             [6, 10],
             [1, 20],
             [1, 20],
@@ -58,10 +58,10 @@ evaluate_tool(combination)
 count = 0
 for i, combination in enumerate(combinations):
     count += 1
-    if count >= 514:
-        print(f"Count {i}")
-        print(f"Combination {combination}")
-        evaluate_tool(combination)
+
+    print(f"Count {i}")
+    print(f"Combination {combination}")
+    evaluate_tool(combination)
 
 
 best_parms = max(check, key=lambda x: x["f1_score"])
