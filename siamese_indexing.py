@@ -11,8 +11,7 @@ The query reduction thresholds should be somewhere around 1-15%
 import subprocess
 import threading
 from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach
-
-project = 'qualitas_corpus_clean'
+from create_clusters import create_clusters_elasticserach
 
 def single_execution():
     for combination in combinations:
@@ -36,18 +35,16 @@ def multiple_execution():
     for thread in threads:
         thread.join()
 
-def execute_siamese_index_properties(combination):
-    r1 = combination[0]
-    r2 = combination[1]
-    r3 = combination[2]
-    ngram = r1
+def execute_siamese_index_properties(ngram):
+    ngram = 4
 
+    stop_cluster_elasticserach(ngram) 
     execute_cluster_elasticserach(ngram)    
 
+    project = 'qualitas_corpus_clean'
     n_gram_properties_path = './n-gram-properties'
     elasticsearch_path = '/home/denis/programming/siamese-optmization/elasticsearch-siamese'
     elasticsearch_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}'
-
 
     config = open('index-config.properties', 'r').read()
     config = config.replace('elasticsearchLoc=elasticsearchLoc', f'elasticsearchLoc={elasticsearch_path}')
@@ -55,9 +52,9 @@ def execute_siamese_index_properties(combination):
     config = config.replace('t1NgramSize=4', f't1NgramSize={ngram}')
     config = config.replace('t2NgramSize=4', f't2NgramSize={ngram}')
     config = config.replace('ngramSize=4', f'ngramSize={ngram}')
-    config_name = f'qualitas_corpus_n_gram_{ngram}'
-    config = config.replace('index=qualitas_corpus_clean', f'index={config_name}')
-    print(f'CONFIG NAME: {config_name} \n\n')
+    index_name = f'qualitas_corpus_n_gram_{ngram}'
+    config = config.replace('index=qualitas_corpus_clean', f'index={index_name}')
+    print(f'CONFIG NAME: {index_name} \n\n')
     new_config = f'{n_gram_properties_path}/n_gram_{ngram}.properties'
     open(new_config, 'w').write(config)
     command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ../siamese-optmization/Siamese/my_index/{project} -cf {new_config}'
@@ -66,8 +63,10 @@ def execute_siamese_index_properties(combination):
 
     stop_cluster_elasticserach(ngram) 
 
-combinations = [(i,i,i) for i in range(4,25)]
 
-single_execution()
+#create_clusters_elasticserach()
+combinations = [(i,i,i) for i in range(4,25)]
+execute_siamese_index_properties(4)
+#single_execution()
 #multiple_execution()
 

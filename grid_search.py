@@ -20,8 +20,8 @@ def format_dimension(parms):
 def evaluate_tool(parms):
     parms = format_dimension(parms)
     parms['config_folder'] = 'configurations_grid_search'
-    recall, precision, f1_score = execute_siamese_search(**parms)
-    check.append({'recall': recall, 'precision': precision, 'f1_score': f1_score, 'parms': parms})
+    parms['output_folder'] = 'output_grid_search'
+    execute_siamese_search(**parms)
 
 dimensions=[[4, 24],
             [6, 10],
@@ -52,7 +52,7 @@ check = []
 combinations = product(*dimensions)
 # len_combinations = 20*4*20*20*20*20*4*4*4*4 # 3276800000
 
-combination = [4,6,10,10,10,10,4,4,4,1]
+combination = [6,6,10,10,10,10,4,4,4,1]
 evaluate_tool(combination)
 
 count = 0
@@ -63,13 +63,13 @@ for i, combination in enumerate(combinations):
     evaluate_tool(combination)
 
 
-best_parms = max(check, key=lambda x: x["f1_score"])
+'''best_parms = max(check, key=lambda x: x["f1_score"])
 
 print("Melhores hiperparâmetros encontrados:")
 print("parms:", best_parms)
 
 with open("grid_searh_results.json", "w") as file:
-    json.dump(check, file, indent=4)
+    json.dump(check, file, indent=4)'''
 
 end_time = time.time()
 execution_time = (end_time - start_time) / 60

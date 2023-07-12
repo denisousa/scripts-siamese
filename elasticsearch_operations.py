@@ -3,6 +3,12 @@ import os
 import subprocess
 from time import sleep
 
+def get_ngram_by_port():
+    ngram_by_port = {}
+    for ngram_i, port in zip(range(4,25), range(9200,9221)):
+        ngram_by_port[ngram_i] = port
+    return ngram_by_port
+
 def create_clusters_elasticserach():
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
     for ngram_i, port in zip(range(4,24), range(9200,9221)):
@@ -12,8 +18,12 @@ def create_clusters_elasticserach():
         elasticsearch_yml_content = f'cluster.name: cluster-ngram-{ngram_i} \nindex.query.bool.max_clause_count: 4096 \nhttp.port: {port}'
 
         os.system(command_unzip)
+        sleep(1)
+
         os.system(command_rename)
         open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
+        print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram_i}\n')
+        break
 
 def execute_cluster_elasticserach(ngram):
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
