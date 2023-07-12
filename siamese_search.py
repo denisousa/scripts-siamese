@@ -45,7 +45,7 @@ def generate_config_file(parms):
     config = open('search-config.properties', 'r').read()
     config = config.replace('elasticsearchLoc=elasticsearchLoc', f'elasticsearchLoc={elasticsearch_path}')
     config = config.replace('outputFolder=search_results', f'outputFolder={parms["output_folder"]}')
-    config = config.replace('cluster=cluster', f'cluster=cluster-ngram-{parms["ngramSize"]}')
+    config = config.replace('cluster=cluster', f'cluster=stackoverflow')
     config = config.replace('ngramSize=4', f'ngramSize={parms["ngramSize"]}')
     config = config.replace('t2NgramSize=4', f't2NgramSize={parms["ngramSize"]}')
     config = config.replace('t1NgramSize=4', f't1NgramSize={parms["ngramSize"]}')
@@ -78,6 +78,8 @@ def execute_siamese_search(**parms):
 
     stop_cluster_elasticserach(parms["ngramSize"])
     most_recent_siamese_output = most_recent_file(output_path)
+    new_output_name = properties_path.split('/')[-1].replace('properties', 'csv')
+    os.rename(f'{output_path}/{most_recent_siamese_output}', f'{output_path}/{new_output_name}')
     df_siamese = format_siamese_output(output_path, most_recent_siamese_output)
     df_clones = pd.read_csv('clones.csv')
     df_clones = filter_oracle(df_clones)

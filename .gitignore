@@ -7,6 +7,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+configurations_bayesian_search/*
+configurations_grid_search/*
+configurations_random_search/*
+
 output_bayesian_search/*
 output_grid_search/*
 output_random_search/*

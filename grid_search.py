@@ -52,7 +52,7 @@ check = []
 combinations = product(*dimensions)
 # len_combinations = 20*4*20*20*20*20*4*4*4*4 # 3276800000
 
-combination = [6,6,10,10,10,10,4,4,4,1]
+combination = [4,6,10,10,10,10,4,4,4,1]
 evaluate_tool(combination)
 
 count = 0

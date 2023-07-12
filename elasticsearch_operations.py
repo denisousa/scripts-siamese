@@ -15,7 +15,7 @@ def create_clusters_elasticserach():
         command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
         command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram_i}'
         elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/config/elasticsearch.yml'
-        elasticsearch_yml_content = f'cluster.name: cluster-ngram-{ngram_i} \nindex.query.bool.max_clause_count: 4096 \nhttp.port: {port}'
+        elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 4096 \nhttp.port: {port}'
 
         os.system(command_unzip)
         sleep(1)

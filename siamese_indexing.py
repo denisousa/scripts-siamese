@@ -48,7 +48,7 @@ def execute_siamese_index_properties(ngram):
 
     config = open('index-config.properties', 'r').read()
     config = config.replace('elasticsearchLoc=elasticsearchLoc', f'elasticsearchLoc={elasticsearch_path}')
-    config = config.replace('cluster=cluster', f'cluster=cluster-ngram-{ngram}')
+    config = config.replace('cluster=cluster', f'cluster=stackoverflow')
     config = config.replace('t1NgramSize=4', f't1NgramSize={ngram}')
     config = config.replace('t2NgramSize=4', f't2NgramSize={ngram}')
     config = config.replace('ngramSize=4', f'ngramSize={ngram}')
@@ -64,7 +64,7 @@ def execute_siamese_index_properties(ngram):
     stop_cluster_elasticserach(ngram) 
 
 
-#create_clusters_elasticserach()
+create_clusters_elasticserach()
 combinations = [(i,i,i) for i in range(4,25)]
 execute_siamese_index_properties(4)
 #single_execution()
