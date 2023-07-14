@@ -9,9 +9,24 @@ def get_ngram_by_port():
         ngram_by_port[ngram_i] = port
     return ngram_by_port
 
+def create_one_cluster_elasticserach(ngram, port):
+    elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
+    command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
+    command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram}'
+    elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
+    elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 4096 \nhttp.port: {port}'
+
+    os.system(command_unzip)
+    sleep(1)
+
+    os.system(command_rename)
+    open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
+    print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram}\n')
+
 def create_clusters_elasticserach():
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
     for ngram_i, port in zip(range(4,24), range(9200,9221)):
+        ngram_i = 24
         command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
         command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram_i}'
         elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/config/elasticsearch.yml'
@@ -23,14 +38,15 @@ def create_clusters_elasticserach():
         os.system(command_rename)
         open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
         print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram_i}\n')
-        break
 
 def execute_cluster_elasticserach(ngram):
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
     command_execute = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/bin/elasticsearch -d'
     print(f'EXECUTING elasticsearch-ngram-{ngram}')
-    os.system(command_execute)
-    sleep(6)
+    process = subprocess.Popen(command_execute, shell=True)
+    process.wait()
+    sleep(5)
+    #os.system(command_execute)
     #process = subprocess.Popen(command_execute, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     #process.wait()
 

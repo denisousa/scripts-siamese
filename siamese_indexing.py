@@ -10,8 +10,7 @@ The query reduction thresholds should be somewhere around 1-15%
 
 import subprocess
 import threading
-from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach
-from create_clusters import create_clusters_elasticserach
+from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach, create_clusters_elasticserach, create_one_cluster_elasticserach
 
 def single_execution():
     for combination in combinations:
@@ -36,10 +35,8 @@ def multiple_execution():
         thread.join()
 
 def execute_siamese_index_properties(ngram):
-    ngram = 4
-
     stop_cluster_elasticserach(ngram) 
-    execute_cluster_elasticserach(ngram)    
+    execute_cluster_elasticserach(ngram)
 
     project = 'qualitas_corpus_clean'
     n_gram_properties_path = './n-gram-properties'
@@ -64,9 +61,11 @@ def execute_siamese_index_properties(ngram):
     stop_cluster_elasticserach(ngram) 
 
 
-create_clusters_elasticserach()
+#create_one_cluster_elasticserach(24,9220)
 combinations = [(i,i,i) for i in range(4,25)]
+print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
 execute_siamese_index_properties(4)
+execute_siamese_index_properties(24)
 #single_execution()
 #multiple_execution()
 

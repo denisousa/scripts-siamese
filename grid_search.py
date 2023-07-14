@@ -1,6 +1,5 @@
 from siamese_search import execute_siamese_search
 from itertools import product
-import json
 import time
 
 
@@ -23,7 +22,7 @@ def evaluate_tool(parms):
     parms['output_folder'] = 'output_grid_search'
     execute_siamese_search(**parms)
 
-dimensions=[[4, 24],
+dimensions=[[4, 20],
             [6, 10],
             [1, 20],
             [1, 20],
@@ -47,13 +46,14 @@ dimensions=[[4, 24],
             [-1, 1, 4, 10]]
 '''
 start_time = time.time()
+print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
+print('AFTER YOU NEED RUN start_all_elasticserach.py')
+print('THEN WAIT 2 MINUTEs')
+#kill_all_clusters()
 
 check = []
 combinations = product(*dimensions)
 # len_combinations = 20*4*20*20*20*20*4*4*4*4 # 3276800000
-
-combination = [4,6,10,10,10,10,4,4,4,1]
-evaluate_tool(combination)
 
 count = 0
 for i, combination in enumerate(combinations):
