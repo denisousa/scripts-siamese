@@ -62,16 +62,9 @@ for i, combination in enumerate(combinations):
     print(f"Combination {combination}")
     evaluate_tool(combination)
 
+    end_time = time.time()
+    execution_time = (end_time - start_time) / 60
+    print("Tempo de execução até o presente momento: %.2f minutos" % execution_time)
 
-'''best_parms = max(check, key=lambda x: x["f1_score"])
+print("Tempo de execução total: %.2f minutos" % execution_time)
 
-print("Melhores hiperparâmetros encontrados:")
-print("parms:", best_parms)
-
-with open("grid_searh_results.json", "w") as file:
-    json.dump(check, file, indent=4)'''
-
-end_time = time.time()
-execution_time = (end_time - start_time) / 60
-
-print("Tempo de execução: %.2f minutos" % execution_time)
