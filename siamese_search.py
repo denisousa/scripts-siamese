@@ -2,8 +2,6 @@ import subprocess
 import os
 import pandas as pd
 from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach
-from siamese_operations import format_siamese_output
-from oracle_operations import filter_oracle
 import os
 import gc
 
@@ -87,4 +85,4 @@ def execute_siamese_search(**parms):
         os.system('sync')
     except:
         open('errors_gridsearch.txt', 'a').write(str(parms.values()))
-        open('errors_gridsearch.txt', 'a').write('\n\n\n')
+        open('errors_gridsearch.txt', 'a').write('\n\n')

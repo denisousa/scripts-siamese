@@ -25,18 +25,39 @@ def create_one_cluster_elasticserach(ngram, port):
 
 def create_clusters_elasticserach():
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
-    for ngram_i, port in zip(range(4,24), range(9200,9221)):
-        ngram_i = 24
+    for ngram_i in range(4,26,2):
+        port = 9000 + ngram_i
+        shards = 4
+        replicas = 1
+        shards_per_node = 2
+        mem = 2
+
         command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
         command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram_i}'
         elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/config/elasticsearch.yml'
-        elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 4096 \nhttp.port: {port}'
-
+        elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port}'
+        #elasticsearch_yml_content = f'{elasticsearch_yml_content}\nindex.number_of_shards: {shards}\nindex.number_of_replicas: {replicas}'
+        #elasticsearch_yml_content = f'{elasticsearch_yml_content}\ncluster.routing.allocation.total_shards_per_node: {shards_per_node}'
+        elasticsearch_yml_content = f'{elasticsearch_yml_content}\nindices.cache.filter.size: 20%'
         os.system(command_unzip)
         sleep(1)
 
         os.system(command_rename)
         open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
+
+        elasticsearch_in_bat_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/bin/elasticsearch.in.bat'
+        elasticsearch_in_bat_text = open(elasticsearch_in_bat_path, 'r').read()
+        elasticsearch_in_bat_text = elasticsearch_in_bat_text.replace('ES_MIN_MEM=256m', f'ES_MIN_MEM={mem}g')
+        elasticsearch_in_bat_text = elasticsearch_in_bat_text.replace('ES_MAX_MEM=1g', f'ES_MAX_MEM={mem}g')
+
+        elasticsearch_in_sh_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/bin/elasticsearch.in.sh'
+        elasticsearch_in_sh_text = open(elasticsearch_in_sh_path, 'r').read()
+        elasticsearch_in_sh_text = elasticsearch_in_sh_text.replace('ES_MIN_MEM=256m', f'ES_MIN_MEM={mem}g')
+        elasticsearch_in_sh_text = elasticsearch_in_sh_text.replace('ES_MAX_MEM=1g', f'ES_MAX_MEM={mem}g')
+
+
+        open(elasticsearch_in_bat_path, 'w').write(elasticsearch_in_bat_text)
+        open(elasticsearch_in_sh_path, 'w').write(elasticsearch_in_sh_text)
         print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram_i}\n')
 
 def execute_cluster_elasticserach(ngram):
@@ -51,11 +72,10 @@ def execute_cluster_elasticserach(ngram):
     #process.wait()
 
 def stop_cluster_elasticserach(ngram):
-    for ngram_i, port in zip(range(4,24), range(9200,9221)):
-        if ngram_i == ngram:
-            command_stop = f'sudo kill $(sudo lsof -t -i :{port})'
-            print(f'STOP elasticsearch-ngram-{ngram}')
-            os.system(command_stop)
+    port = 9000 + ngram
+    command_stop = f'sudo kill $(sudo lsof -t -i :{port})'
+    print(f'STOP elasticsearch-ngram-{ngram}')
+    os.system(command_stop)
 
 def change_cluster_name(ngram_size):
     command = f'sudo -S kill $(sudo lsof -t -i :9200)'
@@ -67,7 +87,9 @@ def change_cluster_name(ngram_size):
     elasticsearch_yml_text = open(elasticsearch_yml_path, 'r').read()
     cluster_name = re.search(pattern, elasticsearch_yml_text).group(1)
     elasticsearch_yml_text = elasticsearch_yml_text.replace(cluster_name, f'n_gram_{ngram_size}')
+    elasticsearch_yml_text = elasticsearch_yml_text
     open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_text)
+
 
     command = f'../siamese-optmization/elasticsearch-2.2.0/bin/elasticsearch'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)

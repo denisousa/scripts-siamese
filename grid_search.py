@@ -22,8 +22,8 @@ def evaluate_tool(parms):
     parms['output_folder'] = 'output_grid_search'
     execute_siamese_search(**parms)
 
-dimensions=[[4, 20],
-            [6, 10],
+dimensions=[[24, 4],
+            [10, 6],
             [1, 20],
             [1, 20],
             [1, 20],

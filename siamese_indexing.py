@@ -7,7 +7,8 @@ Search
 The query reduction thresholds should be somewhere around 1-15%
 
 '''
-
+import os
+import gc
 import subprocess
 import threading
 from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach, create_clusters_elasticserach, create_one_cluster_elasticserach
@@ -35,6 +36,8 @@ def multiple_execution():
         thread.join()
 
 def execute_siamese_index_properties(ngram):
+    gc.collect()
+    os.system('sync')
     stop_cluster_elasticserach(ngram) 
     execute_cluster_elasticserach(ngram)
 
@@ -61,11 +64,11 @@ def execute_siamese_index_properties(ngram):
     stop_cluster_elasticserach(ngram) 
 
 
-#create_one_cluster_elasticserach(24,9220)
-combinations = [(i,i,i) for i in range(4,25)]
 print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
-execute_siamese_index_properties(4)
-execute_siamese_index_properties(24)
+#create_one_cluster_elasticserach(24,9220)
+for i in range(4,26,2):
+    execute_siamese_index_properties(4)
+    break
 #single_execution()
 #multiple_execution()
 
