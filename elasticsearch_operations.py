@@ -25,7 +25,8 @@ def create_one_cluster_elasticserach(ngram, port):
 
 def create_clusters_elasticserach():
     elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
-    for ngram_i in range(4,26,2):
+    clusters = [5,7,9,11,13,15,17,19,21,23]
+    for ngram_i in clusters:
         port = 9000 + ngram_i
         shards = 4
         replicas = 1
@@ -66,7 +67,7 @@ def execute_cluster_elasticserach(ngram):
     print(f'EXECUTING elasticsearch-ngram-{ngram}')
     process = subprocess.Popen(command_execute, shell=True)
     process.wait()
-    sleep(5)
+    sleep(7)
     #os.system(command_execute)
     #process = subprocess.Popen(command_execute, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     #process.wait()

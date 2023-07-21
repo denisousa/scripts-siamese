@@ -1,0 +1,72 @@
+(4, 6, 2, -1)
+Runtime to date: 1.71 minutes
+(4, 6, 2, 10)
+Runtime to date: 1.66 minutes
+(4, 6, 8, -1)
+Runtime to date: 1.78 minutes
+(4, 6, 8, 10)
+Runtime to date: 1.75 minutes
+(4, 6, 10, -1)
+Runtime to date: 1.79 minutes
+(4, 6, 10, 10)
+Runtime to date: 1.78 minutes
+(4, 10, 2, -1)
+Runtime to date: 1.64 minutes
+(4, 10, 2, 10)
+Runtime to date: 1.63 minutes
+(4, 10, 8, -1)
+Runtime to date: 1.77 minutes
+(4, 10, 8, 10)
+Runtime to date: 1.76 minutes
+(4, 10, 10, -1)
+Runtime to date: 1.79 minutes
+(4, 10, 10, 10)
+Runtime to date: 1.82 minutes
+(8, 6, 2, -1)
+Runtime to date: 2.32 minutes
+(8, 6, 2, 10)
+Runtime to date: 2.01 minutes
+(8, 6, 8, -1)
+Runtime to date: 1.94 minutes
+(8, 6, 8, 10)
+Runtime to date: 1.91 minutes
+(8, 6, 10, -1)
+Runtime to date: 1.92 minutes
+(8, 6, 10, 10)
+Runtime to date: 1.94 minutes
+(8, 10, 2, -1)
+Runtime to date: 1.82 minutes
+(8, 10, 2, 10)
+Runtime to date: 1.85 minutes
+(8, 10, 8, -1)
+Runtime to date: 1.93 minutes
+(8, 10, 8, 10)
+Runtime to date: 1.91 minutes
+(8, 10, 10, -1)
+Runtime to date: 1.93 minutes
+(8, 10, 10, 10)
+Runtime to date: 1.94 minutes
+(16, 6, 2, -1)
+Runtime to date: 3.36 minutes
+(16, 6, 2, 10)
+Runtime to date: 2.79 minutes
+(16, 6, 8, -1)
+Runtime to date: 2.81 minutes
+(16, 6, 8, 10)
+Runtime to date: 2.98 minutes
+(16, 6, 10, -1)
+Runtime to date: 3.01 minutes
+(16, 6, 10, 10)
+Runtime to date: 2.97 minutes
+(16, 10, 2, -1)
+Runtime to date: 2.88 minutes
+(16, 10, 2, 10)
+Runtime to date: 2.90 minutes
+(16, 10, 8, -1)
+Runtime to date: 2.88 minutes
+(16, 10, 8, 10)
+Runtime to date: 2.91 minutes
+(16, 10, 10, -1)
+Runtime to date: 2.80 minutes
+(16, 10, 10, 10)
+Runtime to date: 2.91 minutes

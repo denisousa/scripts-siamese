@@ -6,15 +6,8 @@ import time
 def format_dimension(parms):
     return {'ngramSize' : parms[0],
             'minCloneSize' : parms[1],
-            'QRPercentileNorm' : parms[2], 
-            'QRPercentileT2' : parms[3],
-            'QRPercentileT1' : parms[4],
-            'QRPercentileOrig' : parms[5],
-            'normBoost': parms[6],
-            't2Boost': parms[7],
-            't1Boost': parms[8],
-            'origBoost': parms[9]}
-
+            'QRPercentile' : parms[2], 
+            'Boost': parms[3]}
 
 def evaluate_tool(parms):
     parms = format_dimension(parms)
@@ -22,49 +15,29 @@ def evaluate_tool(parms):
     parms['output_folder'] = 'output_grid_search'
     execute_siamese_search(**parms)
 
-dimensions=[[24, 4],
-            [10, 6],
-            [1, 20],
-            [1, 20],
-            [1, 20],
-            [1, 20],
-            [-1, 10],
-            [-1, 10],
-            [-1, 10],
-            [-1, 10]]
+dimensions=[[4, 8, 16], # ngram
+            [6, 10], # minCloneSize
+            [2, 8, 10], # 
+            [-1, 10]] # boosting
 
-# 6 pontos
-'''dimensions=[[4, 6, 8, 10, 12, 14],
-            [6, 7, 8, 9, 10],
-            [1, 4, 8, 12, 16, 20],
-            [1, 4, 8, 12, 16, 20],
-            [1, 4, 8, 12, 16, 20],
-            [1, 4, 8, 12, 16, 20],
-            [-1, 1, 4, 10],
-            [-1, 1, 4, 10],
-            [-1, 1, 4, 10],
-            [-1, 1, 4, 10]]
-'''
-start_time = time.time()
-print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
-print('AFTER YOU NEED RUN start_all_elasticserach.py')
-print('THEN WAIT 2 MINUTEs')
-#kill_all_clusters()
 
+print('NOTE: FIRST YOU NEED RUN kill_all_elasticserach.py')
 check = []
 combinations = product(*dimensions)
-# len_combinations = 20*4*20*20*20*20*4*4*4*4 # 3276800000
 
-count = 0
+start_total_time = time.time()
 for i, combination in enumerate(combinations):
-    count += 1
+    start_time = time.time()
+    text = f'{combination}'
     print(f"Count {i}")
     print(f"Combination {combination}")
     evaluate_tool(combination)
 
     end_time = time.time()
     execution_time = (end_time - start_time) / 60
-    print("Tempo de execução até o presente momento: %.2f minutos" % execution_time)
+    print("Runtime to date: %.2f minutes" % execution_time)
+    open('result_time.txt', 'a').write(f"{combination}\nRuntime to date: %.2f minutes\n" % execution_time)
 
-print("Tempo de execução total: %.2f minutos" % execution_time)
+total_execution_time = (end_time - start_total_time) / 60
+print("Total execution time: %.2f minutes" % total_execution_time)
 

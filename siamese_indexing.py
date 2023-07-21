@@ -66,9 +66,9 @@ def execute_siamese_index_properties(ngram):
 
 print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
 #create_one_cluster_elasticserach(24,9220)
-for i in range(4,26,2):
-    execute_siamese_index_properties(4)
-    break
+clusters = range(5,24)
+for i in clusters:
+    execute_siamese_index_properties(i)
 #single_execution()
 #multiple_execution()
 
