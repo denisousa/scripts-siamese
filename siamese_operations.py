@@ -72,7 +72,6 @@ def remove_first_backslash(path):
 
 def format_siamese_output(output_path, siamese_output_name):
     siamese_clones = []
-    df_qualitas_and_so = pd.read_csv('clones.csv')
     csv_lines = [line for line in open(f'{output_path}/{siamese_output_name}', 'r').read().rstrip().split('\n')]
 
     for line in csv_lines:

@@ -1,117 +1,152 @@
 import pandas as pd
 from siamese_operations import format_siamese_output
-import time
+from oracle_operations import filter_oracle
+import json
+import os
+import re
 
 
-def get_match_clones_with_oracle(df_siamese, df_clones):
-    merged_df = pd.merge(df_siamese, df_clones, on=['file1', 'file2'], how='inner')
+def find_float_numbers(input_string):
+    float_numbers = re.findall(r'\b\d+\.\d+\b', input_string)
+    return [float(num) for num in float_numbers]
+
+
+def extract_text_between_hyphens_and_underscores(input_string):
+    pattern = r'-(.*?)\_'
+    matches = re.findall(pattern, input_string)
+    return matches
+
+def get_files_in_folder(folder_path):
+    files = os.listdir(folder_path)
+    file_times = [(os.path.join(folder_path, file), os.path.getctime(os.path.join(folder_path, file))) for file in files]
+    sorted_files = sorted(file_times, key=lambda x: x[1])
+    return [file_path.split('/')[-1] for file_path, _ in sorted_files]
+
+
+def check_clone_is_correct(oracle_clones_list, siamese_clone):
+    siamese_clone = {'start2': siamese_clone[1], 'end2': siamese_clone[2]}
     
-    start1_condition = merged_df['start1_x'] >= merged_df['start1_y']
-    end1_condition = merged_df['end1_x'] <= merged_df['end1_y']
-    
-    start2_condition = merged_df['start2_x'] >= merged_df['start2_y']
-    end2_condition = merged_df['end2_x'] <= merged_df['end2_y']
-    
-    filter_df1 = merged_df[start1_condition & end1_condition & start2_condition & end2_condition]
+    for oracle_clone in oracle_clones_list:
+        oracle_clone = {'start2': oracle_clone[1], 'end2': oracle_clone[2]}
 
-    start1_condition = merged_df['start1_x'] <= merged_df['start1_y']
-    end1_condition = merged_df['end1_x'] >= merged_df['end1_y']
-    
-    start2_condition = merged_df['start2_x'] <= merged_df['start2_y']
-    end2_condition = merged_df['end2_x'] >= merged_df['end2_y']
+        # Oracle inside Siamese
+        start2_condition = oracle_clone['start2'] >= siamese_clone['start2']
+        end2_condition = oracle_clone['end2'] <= siamese_clone['end2']
 
-    filter_df2 = merged_df[start1_condition & end1_condition & start2_condition & end2_condition]
-    filter_df = pd.merge(filter_df1, filter_df2, how='outer')
-    return filter_df
+        if start2_condition and end2_condition:
+            return True
+            
+        # Siamese inside Oracle
+        start2_condition = oracle_clone['start2'] <= siamese_clone['start2']
+        end2_condition = oracle_clone['end2'] >= siamese_clone['end2']
 
-'''def calculate_mrr_CHATGPT(predictions, df_clones):
-    mrr = 0
-    relevants = list(df_clones['file2'])
-    for pred, rel in zip(predictions, relevants):
-        if rel in pred:
-            rank = pred.index(rel) + 1  # Obter a posição do item relevante na lista
-            mrr += 1 / rank
-    mrr /= len(predictions)
-    return mrr
-
-# Exemplo de uso
-predictions = [
-    ['Item1', 'Item3', 'Item2'],
-    ['Item2', 'Item1', 'Item3'],
-    ['Item3', 'Item2', 'Item1']
-]'''
-
-df_clones = pd.read_csv('clones.csv')
-df_siamese = pd.read_csv('df_siamese_formatted.csv')
-df_merge = get_match_clones_with_oracle(df_siamese, df_clones)
-
-def check_clone_is_correct(oracle_row, siamese_row):
-    # Oracle inside Siamese
-    start1_condition = oracle_row['start1'] >= siamese_row['start1']
-    end1_condition = oracle_row['end1'] <= siamese_row['end1']
-
-    if start1_condition and end1_condition:
-        return True
-        
-    # Siamese inside Oracle
-    start1_condition = oracle_row['start1'] <= siamese_row['start1']
-    end1_condition = oracle_row['end1'] >= siamese_row['end1']
-
-    if start1_condition and end1_condition:
-        return True
+        if start2_condition and end2_condition:
+            return True
 
     return False
 
-def calculate_mrr(df_siamese, df_clones):
-    # File1 -> Stackoverflow
-    # File2 -> Qualitas Corpus
+
+def get_qualitas_clones_in_dataframe_by_so_clone(so_clone, dataframe):
+    file1_cond = (dataframe['file1'] == so_clone['file1'])
+    start1_cond = (dataframe['start1'] == so_clone['start1'])
+    end1_cond = (dataframe['end1'] == so_clone['end1'])
+    df_matched_rows = dataframe[file1_cond & start1_cond & end1_cond]
+    df_matched_rows = df_matched_rows[['file2', 'start2', 'end2']]
+    df_matched_rows.reset_index(drop=True, inplace=True)
+    return df_matched_rows.values.tolist()
+
+
+def merge_stackoverflow_clones(df_clones, df_siamese):
+    df_siamese_filtered = df_siamese[['file1', 'start1', 'end1']]
+    df_siamese_queries = df_siamese_filtered.drop_duplicates(subset=['file1', 'start1', 'end1'])
+
+    df_clones_filtered = df_clones[['file1', 'start1', 'end1']]
+    df_clones_queries = df_clones_filtered.drop_duplicates(subset=['file1', 'start1', 'end1'])
     
-    mrr = 0
-    so_snippets = list(df_siamese.drop_duplicates(subset='file1')['file1'])
-    len_so_snippets = len(so_snippets)
+    
+    return pd.merge(df_siamese_queries, df_clones_queries, on=['file1', 'start1', 'end1'])
 
-    for so_snippet in so_snippets:
-        oracle_filtered_df = df_clones[df_clones['file1'] == so_snippet]
-        oracle_filtered_df.reset_index(drop=True, inplace=True)
-        
-        if oracle_filtered_df.shape[0] == 0:
-            mrr += 1 # Estou assumindo 1 ao MRR quando o Siamese acerta um clone fora do oráculo
-            continue
-        
-        siamese_row = df_siamese.loc[df_siamese['file1'] == so_snippet].iloc[0]
-        for index, oracle_row in oracle_filtered_df.iterrows():
-            file2_condition = oracle_row['file2'] == siamese_row['file2']
-            if not file2_condition and index == len(oracle_row):
-                mrr += 1
-            
-            if not file2_condition:
-                continue
 
-            clone_is_correct = check_clone_is_correct(oracle_row, siamese_row)
+def calculate_mrr(df_siamese, df_clones):
+    # File1 -> Stackoverflow 
+    # File2 -> Qualitas Corpus
+
+    total_reciprocal_rank = 0.0
+    merged_so_df = merge_stackoverflow_clones(df_clones, df_siamese)
+    num_queries = df_clones.shape[0]
+
+    for total_index, row in merged_so_df.iterrows():
+        oracle_clones = get_qualitas_clones_in_dataframe_by_so_clone(row, df_clones)
+        siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
+        for index, siamese_hit in enumerate(siamese_hit_attempts):
+            clone_is_correct = check_clone_is_correct(oracle_clones, siamese_hit)
+
             if clone_is_correct:
-                mrr += 1/(index+1)
+                total_reciprocal_rank += 1/(index+1)
+                break
+            
+            # This code is not necessary
+            if (index + 1) == len(siamese_hit_attempts):
+                total_reciprocal_rank += 0
                 break
 
-            if index == len(oracle_row):
-                mrr += 0 # Boto 0 quando ele não acerta nada
-    
-    
-    mrr = mrr/len_so_snippets
-    print(f'Len SO Snippets: {len_so_snippets}', f'MRR: {mrr}')
+    mrr = total_reciprocal_rank/num_queries
+    # print(f'Number of Queries (Num. SO Snippets): {num_queries}', f'MRR: {mrr}')
     return mrr
 
-start_time = time.time()
 
-calculate_mrr(df_siamese, df_clones)
+def calculate_one_mrr(directory, result_siamese_csv):
+    df_siamese = format_siamese_output(directory, result_siamese_csv)
+    df_clones = pd.read_csv('clones.csv')
+    df_clones = filter_oracle(df_clones)
+    return calculate_mrr(df_siamese, df_clones)
 
-end_time = time.time()
-execution_time = end_time - start_time
-print("Tempo de execução:", execution_time, "segundos")
 
-'''
-OBS: Quando ele só encontra 1 clone correpondente e está errado, então ele é 0
-O que eu faço em relação aos clones que não foram detectados?
-'''
+def calculate_complete_mrr():
+    df_clones = pd.read_csv('clones.csv')
+    df_clones = filter_oracle(df_clones)
+    optimization_algorithms = ['grid_search', 'random_search', 'bayesian_search']
+    columns = ['index', 'cloneSize', 'ngramSize', 'qrNorm', 'boost', 'time', 'mrr']
+    writer = pd.ExcelWriter('mrr_results.xlsx', engine='xlsxwriter')
 
-# mrr_score = calculate_mrr(predictions, relevants)
-# print("Mean Reciprocal Rank (MMR):", mrr_score)
+    for algorithm in optimization_algorithms:
+        print(algorithm)
+        directory = f'output_{algorithm}'
+        results_siamese_csv = get_files_in_folder(directory)
+
+        mrr_by_siamese_result = {}
+        mrr_results_by_algorithm = []
+        all_result_time = open(f'./{algorithm}_result_time.txt', 'r').read()
+        result_time = list(map(float, find_float_numbers(all_result_time)))
+
+        for index, result_siamese_csv in enumerate(results_siamese_csv):
+            if result_siamese_csv == 'README.md':
+                continue
+
+            try:
+                df_siamese = format_siamese_output(directory, result_siamese_csv)
+                mrr_result = calculate_mrr(df_siamese, df_clones)
+                mrr_by_siamese_result[result_siamese_csv] = mrr_result
+            except:
+                print(f'error in {result_siamese_csv}')
+
+
+            params = extract_text_between_hyphens_and_underscores(result_siamese_csv)
+            params = [int(num) for num in params]
+            
+            mrr_result_row = [index+1]
+            for param in params:
+                mrr_result_row.append(param)
+            mrr_result_row.append(result_time[index])
+            mrr_result_row.append(mrr_result)
+
+            mrr_results_by_algorithm.append(mrr_result_row)
+
+        with open(f'mrr_{algorithm}.json', "w") as json_file:
+            json.dump(mrr_by_siamese_result, json_file, indent=4)
+        
+        df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
+        df_metric.to_excel(f'mrr_{algorithm}.xlsx', index=False)
+        df_metric.to_excel(writer, sheet_name=algorithm, index=False)
+
+    writer.close()
