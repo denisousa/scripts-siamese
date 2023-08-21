@@ -13,11 +13,11 @@ import subprocess
 import threading
 from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach, create_clusters_elasticserach, create_one_cluster_elasticserach
 
-def single_execution():
+def single_execution(combinations):
     for combination in combinations:
         execute_siamese_index_properties(combination)
 
-def multiple_execution():
+def multiple_execution(combinations):
     batch_size = 2
     threads = []
     for i in range(0, len(combinations), batch_size):
@@ -64,7 +64,17 @@ def execute_siamese_index_properties(ngram):
     stop_cluster_elasticserach(ngram) 
 
 
-print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
+def execute_siamese_index(siamese_jar_path, project_path, properties_path):
+    ''' You Need Run Elasticsearch '''
+    gc.collect()
+    os.system('sync')
+
+    command = f'java -jar {siamese_jar_path} -c index -i {project_path} -cf {properties_path}'
+    process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+    process.wait()
+
+
+#print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
 #create_one_cluster_elasticserach(24,9220)
 clusters = range(5,24)
 for i in clusters:

@@ -5,7 +5,7 @@ from kill_all_elasticsearch import kill_all_clusters
 
 kill_all_clusters()
 execute_grid_search()
-kill_all_clusters()
+'''kill_all_clusters()
 execute_random_search()
 kill_all_clusters()
-execute_bayesian_search()
+execute_bayesian_search()'''

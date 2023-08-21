@@ -18,23 +18,21 @@ def evaluate_tool(parms):
     parms['algorithm'] = 'grid_search'
     execute_siamese_search(**parms)
 
-
-
 def execute_grid_search():
-    dimensions=[[4, 8, 16],      #ngramSize
-                [6, 10],         #cloneSize
-                [2, 8, 10],      #qrPercentile
-                [-1, 1, 4, 10],  #boost
-                [-1, 1, 4, 10],  #boost
-                [-1, 1, 4, 10],  #boost
-                [-1, 1, 4, 10]]  #boost
+    dimensions=[[4],      #ngramSize
+                [6],         #cloneSize
+                [2],      #qrPercentile
+                [4],  #boost
+                [1],  #boost
+                [4],  #boost
+                [4]]  #boost
 
     print('NOTE: FIRST YOUS NEED RUN kill_all_elasticserach.py')
     combinations = product(*dimensions)
 
     algorithm = 'grid_search'
-    delete_files_in_folder(f'./output_{algorithm}')
-    open(f'{algorithm}_result_time.txt', 'w').write('')
+    # delete_files_in_folder(f'./output_{algorithm}')
+    # open(f'{algorithm}_result_time.txt', 'w').write('')
 
     start_total_time = time.time()
     for i, combination in enumerate(combinations):
@@ -51,4 +49,3 @@ def execute_grid_search():
     total_execution_time = (end_time - start_total_time) / 60
     print("Total execution time: %.2f minutes" % total_execution_time)
     open(f'{algorithm}_result_time.txt', 'a').write("Total execution time: %.2f minutes" % total_execution_time)
-
