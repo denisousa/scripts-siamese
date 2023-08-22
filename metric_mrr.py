@@ -102,20 +102,16 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
     all_reciprocal_rank = {
         'results': [],
         'status': {
-            'siamese': {
-                'siamese_queries': df_siamese['file1'].nunique(),
-                'siamese_correct_predictions': merged_so_df.shape[0],
-                'siamese_wrong_predictions': merged_so_siamese_df.shape[0],
-                'siamese_correct_predictions_percentage': round((merged_so_df.shape[0]/df_siamese['file1'].nunique())*100, 1)
-            },
-            'oracle': {
-                'oracle_number_clones': df_clones.shape[0],
-                'oracle_predicted_clones': merged_so_df.shape[0],
-                'oracle_unpredicted_clones': df_clones.shape[0] - merged_so_df.shape[0]
+            'siamese_queries': df_siamese['file1'].nunique(),
+            'siamese_correct_predictions': merged_so_df.shape[0],
+            'siamese_wrong_predictions': merged_so_siamese_df.shape[0],
+            'siamese_correct_predictions_percentage': round((merged_so_df.shape[0]/df_siamese['file1'].nunique())*100, 1),
+            'oracle_number_clones': df_clones.shape[0],
+            'oracle_predicted_clones': merged_so_df.shape[0],
+            'oracle_unpredicted_clones': df_clones.shape[0] - merged_so_df.shape[0]
             },
             'reciprocal_rank': {}
         }
-    }
 
     for _, row in merged_so_siamese_df.iterrows():
         siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
@@ -271,5 +267,3 @@ def calculate_complete_mrr():
         df_metric.to_excel(writer, sheet_name=algorithm, index=False)
 
     writer.close()
-
-calculate_complete_mrr()
