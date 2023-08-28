@@ -25,9 +25,5 @@ def calculate_map_at_k(actual_list, predicted_list, k):
     return map_at_k
 
 # Exemplo de dados
-actual_list = [[1, 2, 3], [1, 4], [2, 4, 5]]
-predicted_list = [[1, 3, 5], [1, 2, 4], [1, 3, 4]]
-
-k = 2
-map_at_k = calculate_map_at_k(actual_list, predicted_list, k)
-print(f"MAP@{k} = {map_at_k:.4f}")
+# actual_list = [['a', 'b'], ['a'], ['b', 'c']]
+# predicted_list = [['a', 'b'], ['a', 'b'], ['a', 'b']]

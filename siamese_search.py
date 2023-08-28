@@ -48,7 +48,7 @@ def execute_siamese_search(**parms):
 
     project = 'stackoverflow_filtered'
     properties_path = generate_config_file(parms)
-    output_path = f'/home/denis/programming/scripts-siamese/output_{parms["algorithm"]}'
+    output_path = f'./output_{parms["algorithm"]}'
     command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -c search -i ../siamese-optmization/Siamese/my_index/{project} -o ./output_{parms["algorithm"]} -cf ./{properties_path}'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()

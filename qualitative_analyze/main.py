@@ -22,29 +22,42 @@ for csv_result in siamese_csv_results:
     open(f'./siamese_code_results/{result_filename}.txt', 'w').write('')
     df_siamese = format_siamese_output(siamese_csv_results_folder, csv_result)
     open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'SIAMESE OUTPUT CODE ANALYZE \n')
-    open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'{csv_result} \n\n\n')
+    open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'{csv_result} \n\n')
     df_siamese['start1'] = df_siamese['start1'].astype(int)
     df_siamese['start2'] = df_siamese['start2'].astype(int)
     df_siamese['end1'] = df_siamese['end1'].astype(int)
     df_siamese['end2'] = df_siamese['end2'].astype(int)
 
-    for index, row in df_siamese.iterrows():
+    df_unique_clones = df_siamese.drop_duplicates(subset=['file1', 'start1', 'end1'])
+
+    for index, row in df_unique_clones.iterrows():
+        df_matched_rows = df_siamese[
+        (df_siamese['file1'] == row['file1']) &
+        (df_siamese['start1'] == row['start1']) &
+        (df_siamese['end1'] == row['end1'])]
+
         so_file = f'{so_path}/' + row['file1']
         so_code = open(so_file, 'r').read()
         so_code_cut = so_code.split('\n')[row['start1']-1:row['end1']]
         so_code_cut = '\n'.join(so_code_cut)
 
-        qa_file = f'{qa_path}/' + row['file2']
-        try:
-            qa_code = open(qa_file, 'r').read()
-        except:
-            print(f'problem: {qa_file}', index, '\n')
-            continue
+        status = '\n' + 'StackOverflow File: ' + str((row['file1'], row['start1'], row['end1'], row['method1'])) + '\n'
+        open(f'./siamese_code_results/{result_filename}.txt', 'a').write(status + f'{df_matched_rows.shape[0]} clones in Qualitas Corpus\n\n')
+        open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'{so_code_cut}' + '\n\n\n')
 
-        qa_code_cut = qa_code.split('\n')[row['start2']-1:row['end2']]
-        qa_code_cut = '\n'.join(qa_code_cut)
-        status = '\n' + 'StackOverflow File: ' + str((row['file1'], row['start1'], row['end1'], row['method1'])) + '\n' + 'Qualitas File: ' + str((row['file2'].split('/')[-1], row['start2'], row['end2'], row['method2'])) + '\n'
-        open(f'./siamese_code_results/{result_filename}.txt', 'a').write(status)
-        open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'\nQualitas Corpus - {row["file2"]} \n' + qa_code_cut + '\n')
-        open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'\nStackOverflow - {row["file1"]} \n' + so_code_cut + '\n\n\n')
+        for _, row in df_matched_rows.iterrows():
+            qa_file = f'{qa_path}/' + row['file2']
+            try:
+                qa_code = open(qa_file, 'r').read()
+            except:
+                print(f'problem: {qa_file}', index, '\n')
+                continue
+
+            qa_code_cut = qa_code.split('\n')[row['start2']-1:row['end2']]
+            qa_code_cut = '\n'.join(qa_code_cut)
+            status = 'Qualitas File: ' + str((row['file2'].split('/')[-1], row['start2'], row['end2'], row['method2'])) + '\n'
+            open(f'./siamese_code_results/{result_filename}.txt', 'a').write(status)
+            open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'{row["file2"]}\n')
+            open(f'./siamese_code_results/{result_filename}.txt', 'a').write(f'{qa_code_cut}' + '\n\n')
+        
         open(f'./siamese_code_results/{result_filename}.txt', 'a').write('===========================================================================================\n')

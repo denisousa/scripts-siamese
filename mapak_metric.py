@@ -2,6 +2,7 @@ import pandas as pd
 from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
 from files_operations import get_files_in_folder
+from test_mapak_metric import calculate_map_at_k
 import json
 import os
 import re
@@ -16,76 +17,11 @@ def get_qualitas_clones_in_dataframe_by_so_clone(so_clone, dataframe):
         (dataframe['start1'] == so_clone['start1']) &
         (dataframe['end1'] == so_clone['end1'])]
     df_matched_rows = df_matched_rows[['file2', 'start2', 'end2']]
+
+    df_matched_rows['clone'] = df_matched_rows['file2'] + '|' + df_matched_rows['start2'].astype(str) + '|' + df_matched_rows['end2'].astype(str)
+
     df_matched_rows.reset_index(drop=True, inplace=True)
-    return df_matched_rows.values.tolist()
-
-def precision_at_k(df: pd.DataFrame, k: int=3, y_test: str='y_actual', y_pred: str='y_recommended') -> float:
-    """
-    Function to compute precision@k for an input boolean dataframe
-    
-    Inputs:
-        df     -> pandas dataframe containing boolean columns y_test & y_pred
-        k      -> integer number of items to consider
-        y_test -> string name of column containing actual user input
-        y-pred -> string name of column containing recommendation output
-        
-    Output:
-        Floating-point number of precision value for k items
-    """
-    # check we have a valid entry for k
-    if k <= 0:
-        raise ValueError('Value of k should be greater than 1, read in as: {}'.format(k))
-    # check y_test & y_pred columns are in df
-    if y_test not in df.columns:
-        raise ValueError('Input dataframe does not have a column named: {}'.format(y_test))
-    if y_pred not in df.columns:
-        raise ValueError('Input dataframe does not have a column named: {}'.format(y_pred))
-        
-    # extract the k rows
-    dfK = df.head(k)
-    # compute number of recommended items @k
-    denominator = dfK[y_pred].sum()
-    # compute number of recommended items that are relevant @k
-    numerator = dfK[dfK[y_pred] & dfK[y_test]].shape[0]
-    # return result
-    if denominator > 0:
-        return numerator/denominator
-    else:
-        return None
-
-def recall_at_k(df: pd.DataFrame, k: int=3, y_test: str='y_actual', y_pred: str='y_recommended') -> float:
-    """
-    Function to compute recall@k for an input boolean dataframe
-    
-    Inputs:
-        df     -> pandas dataframe containing boolean columns y_test & y_pred
-        k      -> integer number of items to consider
-        y_test -> string name of column containing actual user input
-        y-pred -> string name of column containing recommendation output
-        
-    Output:
-        Floating-point number of recall value for k items
-    """
-    # check we have a valid entry for k
-    if k <= 0:
-        raise ValueError('Value of k should be greater than 1, read in as: {}'.format(k))
-    # check y_test & y_pred columns are in df
-    if y_test not in df.columns:
-        raise ValueError('Input dataframe does not have a column named: {}'.format(y_test))
-    if y_pred not in df.columns:
-        raise ValueError('Input dataframe does not have a column named: {}'.format(y_pred))
-        
-    # extract the k rows
-    dfK = df.head(k)
-    # compute number of all relevant items
-    denominator = df[y_test].sum()
-    # compute number of recommended items that are relevant @k
-    numerator = dfK[dfK[y_pred] & dfK[y_test]].shape[0]
-    # return result
-    if denominator > 0:
-        return numerator/denominator
-    else:
-        return None
+    return df_matched_rows['clone'].values.tolist()
 
 open('error_siamese_execution.txt', 'w').write('')
 
@@ -94,6 +30,8 @@ writer = pd.ExcelWriter('mapak_results.xlsx', engine='xlsxwriter')
 optimization_algorithms = ['grid_search']
 df_clones = pd.read_csv('clones.csv')
 df_clones = filter_oracle(df_clones)
+
+mapak = {'erro': 0}
 
 for algorithm in optimization_algorithms:
     print(algorithm)
@@ -113,7 +51,20 @@ for algorithm in optimization_algorithms:
                 so_clone = formart_clone_to_dict(so_clone)
                 qa_clones_from_siamese = get_qualitas_clones_in_dataframe_by_so_clone(so_clone, df_siamese)
                 qa_clones_from_oracle = get_qualitas_clones_in_dataframe_by_so_clone(so_clone, df_clones)
-                print('')
+                
+                if len(qa_clones_from_oracle) == 0:
+                    mapak['erro'] += 1
+                
+                k = len(qa_clones_from_oracle)
+                try:
+                    mapak[k].append([qa_clones_from_oracle, qa_clones_from_siamese])
+                except:
+                    mapak[k] = [qa_clones_from_oracle, qa_clones_from_siamese]
+
+            #k = 2
+            #map_at_k = calculate_map_at_k(actual_list, predicted_list, k)
+            #print(f"MAP@{k} = {map_at_k:.4f}")
+
                 
             # mrr_result = calculate_mrr(result_siamese_csv, df_siamese, df_clones)
         except:
@@ -122,5 +73,4 @@ for algorithm in optimization_algorithms:
             continue
 
 
-
- 
+print('')

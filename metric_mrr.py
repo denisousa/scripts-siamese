@@ -1,9 +1,13 @@
 import pandas as pd
 from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
+#from qualitative_analyze.mean_status import get_mean_status
+from parameters_operations import get_parameters_in_dict
 import json
 import os
 import re
+
+number_folder = 90
 
 
 def find_float_numbers(input_string):
@@ -56,24 +60,23 @@ def get_qualitas_clones_in_dataframe_by_so_clone(so_clone, dataframe):
     return df_matched_rows.values.tolist()
 
 
-def merge_stackoverflow_clones(df_clones, df_siamese):
+def get_clones_that_in_oracle(df_clones, df_siamese):
     so_clones_from_oracle = [f"{row['file1']}|{row['start1']}|{row['end1']}" for _, row in df_clones.iterrows()]
     so_clones_from_siamese = [f"{row['file1']}|{row['start1']}|{row['end1']}" for _, row in df_siamese.iterrows()]
 
-    so_clones_from_oracle = set(so_clones_from_oracle)
-    so_clones_from_siamese = set(so_clones_from_siamese)
+    so_clones_from_oracle = list(set(so_clones_from_oracle))
+    so_clones_from_siamese = list(set(so_clones_from_siamese))
 
-    merge_clones = list(so_clones_from_oracle & so_clones_from_siamese)
+    unique_clones = [clone for clone in so_clones_from_siamese if clone in so_clones_from_oracle]
 
-    data = {'file1': list(map(lambda clone: clone.split('|')[0], merge_clones)),
-            'start1': list(map(lambda clone: int(clone.split('|')[1]), merge_clones)),
-            'end1': list(map(lambda clone: int(clone.split('|')[2]), merge_clones))}
+    data = {'file1': list(map(lambda clone: clone.split('|')[0], unique_clones)),
+            'start1': list(map(lambda clone: int(clone.split('|')[1]), unique_clones)),
+            'end1': list(map(lambda clone: int(clone.split('|')[2]), unique_clones))}
 
     df = pd.DataFrame(data)
     return df.sort_values(by='file1')
 
-
-def merge_stackoverflow_clones_only_siamese(df_clones, df_siamese):
+def get_clones_that_not_in_oracle(df_clones, df_siamese):
     so_clones_from_oracle = [f"{row['file1']}|{row['start1']}|{row['end1']}" for _, row in df_clones.iterrows()]
     so_clones_from_siamese = [f"{row['file1']}|{row['start1']}|{row['end1']}" for _, row in df_siamese.iterrows()]
 
@@ -89,44 +92,96 @@ def merge_stackoverflow_clones_only_siamese(df_clones, df_siamese):
     return df.sort_values(by='file1')
 
 
+def get_clones_that_not_in_siamese(df_clones, df_siamese):
+    so_clones_from_oracle = [f"{row['file1']}|{row['start1']}|{row['end1']}" for _, row in df_clones.iterrows()]
+    so_clones_from_siamese = [f"{row['file1']}|{row['start1']}|{row['end1']}" for _, row in df_siamese.iterrows()]
+
+    so_clones_from_oracle = list(set(so_clones_from_oracle))
+    so_clones_from_siamese = list(set(so_clones_from_siamese))
+    unique_clones = [clone for clone in so_clones_from_oracle if clone not in so_clones_from_siamese]
+
+    data = {'file1': list(map(lambda clone: clone.split('|')[0], unique_clones)),
+            'start1': list(map(lambda clone: int(clone.split('|')[1]), unique_clones)),
+            'end1': list(map(lambda clone: int(clone.split('|')[2]), unique_clones))}
+
+    df = pd.DataFrame(data)
+    return df.sort_values(by='file1')
+
+
+def format_reciprocal_rank_result(reciprocal_rank_result, k, v):
+    reciprocal_rank_result['clones'].append(k)
+    reciprocal_rank_result['reciprocal_rank'].append(v['reciprocal_rank'])
+    reciprocal_rank_result['hit_number'].append(v['hit_number'])
+    reciprocal_rank_result['attempts_number'].append(v['attempts_number'])
+    return reciprocal_rank_result
+
+
+def calculate_hit_number(all_reciprocal_rank):
+    for rr in all_reciprocal_rank['results']:
+        for k, v in rr.items():
+            if v['hit_number'] == 0:
+                continue
+            try:
+                all_reciprocal_rank['status'][f"hit_{v['hit_number']}"] += 1
+            except:
+                all_reciprocal_rank['status'][f"hit_{v['hit_number']}"] = 1
+
+    return all_reciprocal_rank
+
+def get_inside_clones(df1, df2):
+    relax_clones_result = []
+
+    for _, row in df1.iterrows():
+        df2_clones = df2[df2['file1'] == row['file1']]
+        start1_relax = row['start1']
+        end1_relax = row['end1']
+
+        for index, row_df2 in df2_clones.iterrows():
+            if start1_relax <= row_df2['start1'] and end1_relax >= row_df2['end1']:
+                relax_clones_result.append(row)
+                break
+    
+    return pd.DataFrame(relax_clones_result)
+
 def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
     # File1 -> Stackoverflow 
     # File2 -> Qualitas Corpus
 
+    global number_folder
+
     total_reciprocal_rank = 0.0
-    merged_so_df = merge_stackoverflow_clones(df_clones, df_siamese)
-    merged_so_siamese_df = merge_stackoverflow_clones_only_siamese(df_clones, df_siamese)
+    exact_clones_in_oracle = get_clones_that_in_oracle(df_clones, df_siamese)
+    # Situação de estar dentro do outro
+    clones_only_siamese = get_clones_that_not_in_oracle(df_clones, df_siamese)
+    not_predicted_clones = get_clones_that_not_in_siamese(df_clones, df_siamese)
 
-    num_queries = df_clones.shape[0]
+    df_queries = df_clones.drop_duplicates(subset=['file1', 'start1', 'end1'])
+    num_queries = df_queries.shape[0]
 
+    oracle_clones_inside_siamese = get_inside_clones(clones_only_siamese, df_clones)
+    clones_in_oracle = pd.concat([oracle_clones_inside_siamese, exact_clones_in_oracle], ignore_index=True)
+
+    siamese_clones_inside_oracle = get_inside_clones(df_clones, clones_only_siamese)
+    clones_in_oracle = pd.concat([siamese_clones_inside_oracle, clones_in_oracle], ignore_index=True)
+    
     all_reciprocal_rank = {
         'results': [],
-        'status': {
-            'siamese_queries': df_siamese['file1'].nunique(),
-            'siamese_correct_predictions': merged_so_df.shape[0],
-            'siamese_wrong_predictions': merged_so_siamese_df.shape[0],
-            'siamese_correct_predictions_percentage': round((merged_so_df.shape[0]/df_siamese['file1'].nunique())*100, 1),
-            'oracle_number_clones': df_clones.shape[0],
-            'oracle_predicted_clones': merged_so_df.shape[0],
-            'oracle_unpredicted_clones': df_clones.shape[0] - merged_so_df.shape[0]
-            },
-            'reciprocal_rank': {}
+        'status': { 
+            'num_queries': num_queries,
+            'correct_predictions': clones_in_oracle.shape[0],
+            'exact_clones': exact_clones_in_oracle.shape[0],
+            'oracle_clones_inside_siamese': oracle_clones_inside_siamese.shape[0],
+            'siamese_clones_inside_oracle': siamese_clones_inside_oracle.shape[0],
+            'not_predict': not_predicted_clones.shape[0],
+            'correct_predictions_percentage': round((clones_in_oracle.shape[0]/num_queries)*100, 1),
+            'total_prediction_clones': 0,
+            'wrong_prediction_clones': 0,
         }
+    }
 
-    for _, row in merged_so_siamese_df.iterrows():
-        siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
+    all_reciprocal_rank['parameters'] = get_parameters_in_dict(result_siamese_csv)
 
-        oracle_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
-        rr = {
-            f'{oracle_clone}': {
-            'reciprocal_rank': 0,
-            'hit_number' : 0,
-            'attempts_number' : len(siamese_hit_attempts)
-            }
-        }
-        all_reciprocal_rank['results'].append(rr)
-
-    for _, row in merged_so_df.iterrows():
+    for _, row in clones_in_oracle.iterrows():
         reciprocal_rank = 0
         
         oracle_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
@@ -156,55 +211,41 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
                 }
             }
         all_reciprocal_rank['results'].append(rr)
+        all_reciprocal_rank['status']['total_prediction_clones'] += len(siamese_hit_attempts)
+
+        if len(siamese_hit_attempts) > 1:
+            all_reciprocal_rank['status']['wrong_prediction_clones'] += len(siamese_hit_attempts) - 1
+
+    for _, row in not_predicted_clones.iterrows():
+        so_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
+        rr = {
+            f'{so_clone}': {
+            'reciprocal_rank': 0,
+            'hit_number' : 0,
+            'attempts_number' : 0
+            }
+        }
+        all_reciprocal_rank['results'].append(rr)
 
     all_reciprocal_rank = calculate_hit_number(all_reciprocal_rank)
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
-    with open(f'reciprocal_rank/{result_siamese_csv}.json', "w") as json_file:
+    with open(f'reciprocal_rank_{number_folder}/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
 
-    '''writer = pd.ExcelWriter(f'reciprocal_rank/{result_siamese_csv}.xlsx', engine='xlsxwriter')
-    reciprocal_rank_result = {'clones': [], 'reciprocal_rank': [], 'hit_number': [], 'attempts_number': []}
-    for rr_results in all_reciprocal_rank['results']:
-        [format_reciprocal_rank_result(reciprocal_rank_result, k, v) for k, v in rr_results.items()]
-    df_metric = pd.DataFrame(reciprocal_rank_result)
-    df_metric.to_excel(f'reciprocal_rank/{result_siamese_csv}.xlsx', index=False)
-    df_metric.to_excel(writer, sheet_name='results', index=False)
-    writer.close()'''
-
     mrr = total_reciprocal_rank/num_queries
+    all_reciprocal_rank['mrr'] = mrr
     return mrr
-    
-
-def format_reciprocal_rank_result(reciprocal_rank_result, k, v):
-    reciprocal_rank_result['clones'].append(k)
-    reciprocal_rank_result['reciprocal_rank'].append(v['reciprocal_rank'])
-    reciprocal_rank_result['hit_number'].append(v['hit_number'])
-    reciprocal_rank_result['attempts_number'].append(v['attempts_number'])
-    return reciprocal_rank_result
-
-
-def calculate_hit_number(all_reciprocal_rank):
-    for rr in all_reciprocal_rank['results']:
-        for k, v in rr.items():
-            if v['hit_number'] == 0:
-                continue
-            try:
-                all_reciprocal_rank['status']['reciprocal_rank'][f"hit_{v['hit_number']}"] += 1
-            except:
-                all_reciprocal_rank['status']['reciprocal_rank'][f"hit_{v['hit_number']}"] = 1
-
-    return all_reciprocal_rank
-
 
 def calculate_one_mrr(directory, result_siamese_csv):
     df_siamese = format_siamese_output(directory, result_siamese_csv)
-    df_clones = pd.read_csv('clones.csv')
+    df_clones = pd.read_csv('clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     return calculate_mrr(df_siamese, df_clones)
 
-
 def calculate_complete_mrr():
-    df_clones = pd.read_csv('clones.csv')
+    global number_folder
+
+    df_clones = pd.read_csv('clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     # optimization_algorithms = ['grid_search', 'random_search', 'bayesian_search']
     optimization_algorithms = ['grid_search']
@@ -217,7 +258,7 @@ def calculate_complete_mrr():
                'T2Boost',
                'T1Boost',
                'origBoost',
-               'time',
+               #'time',
                'mrr']
 
     open('error_siamese_execution.txt', 'w').write('')
@@ -225,7 +266,7 @@ def calculate_complete_mrr():
 
     for algorithm in optimization_algorithms:
         print(algorithm)
-        directory = f'output_{algorithm}'
+        directory = f'output_{algorithm}_{number_folder}'
         results_siamese_csv = get_files_in_folder(directory)
 
         mrr_by_siamese_result = {}
@@ -254,7 +295,7 @@ def calculate_complete_mrr():
             mrr_result_row.append(result_siamese_csv)
             for param in params:
                 mrr_result_row.append(param)
-            mrr_result_row.append(result_time[index])
+            # mrr_result_row.append(result_time[index])
             mrr_result_row.append(mrr_result)
 
             mrr_results_by_algorithm.append(mrr_result_row)
@@ -265,5 +306,7 @@ def calculate_complete_mrr():
         df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
         df_metric.to_excel(f'mrr_{algorithm}.xlsx', index=False)
         df_metric.to_excel(writer, sheet_name=algorithm, index=False)
-
+  
     writer.close()
+
+calculate_complete_mrr()
