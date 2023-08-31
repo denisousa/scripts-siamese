@@ -47,7 +47,7 @@ def execute_siamese_search(**parms):
     stop_cluster_elasticserach(parms["ngramSize"])
     execute_cluster_elasticserach(parms["ngramSize"])
 
-    project = 'stackoverflow_filtered'
+    project = 'cut_stackoverflow_filtered'
     properties_path = generate_config_file(parms)
     output_path = f'./output_{parms["algorithm"]}_{parms["simThreshold"]}'
 
@@ -57,7 +57,6 @@ def execute_siamese_search(**parms):
     command = f'java -jar ../siamese-0.0.6-SNAPSHOT.jar -c search -i ../../siamese-optmization/Siamese/my_index/{project} -o {output_path} -cf ./{properties_path}'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()
-
 
     stop_cluster_elasticserach(parms["ngramSize"])
     most_recent_siamese_output = most_recent_file(output_path)

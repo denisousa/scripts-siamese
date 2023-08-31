@@ -87,7 +87,9 @@ combinations = [
     [4, 6, 10, 1, 4, 4, -1], # 4076
 ]
 
-simThreshold_values = [0,10,20,30,40,50,60,70,80,90]
+simThreshold_values = [10,20,30,40,50,60,70,80,90]
+
+print("SE QUER EXECUTAR O STACKOVERFLOW FILTERED OU CUT, ALTERE EM: siamese_search.py")
 
 for simThreshold in simThreshold_values:
     execute_grid_search(simThreshold, combinations)
