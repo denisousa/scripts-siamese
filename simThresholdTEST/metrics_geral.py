@@ -1,31 +1,41 @@
-def precision_at_k(y_true, y_scores, k):
-    sorted_indices = sorted(range(len(y_scores)), key=lambda i: y_scores[i], reverse=True)
-    y_true_sorted = [y_true[i] for i in sorted_indices]
-    
-    num_relevant = sum(y_true_sorted[:k])
-    precision = num_relevant / k
-    
-    return precision
+from sklearn.metrics import average_precision_score
+import numpy as np
 
-def average_precision_at_k(y_true, y_scores, k):
-    total_precision = 0.0
-    num_relevant = sum(y_true)
-    
-    for i in range(k):
-        if y_true[i] == 1:
-            precision_at_i = precision_at_k(y_true[:i+1], y_scores[:i+1], i+1)
-            total_precision += precision_at_i
-    
-    avg_precision = total_precision / num_relevant
-    
-    return avg_precision
 
-y_true = [1, 0, 1, 1, 0, 1]
-y_scores = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4]
+def precision_at_k(recommended_items, relevant_items, k):
+    recommended_and_relevant = [item for item in recommended_items[:k] if item in relevant_items]
+    return len(recommended_and_relevant) / k
+
+
+def recall_at_k(recommended_items, relevant_items, k):
+    recommended_and_relevant = [item for item in recommended_items[:k] if item in relevant_items]
+    return len(recommended_and_relevant) / len(relevant_items)
+
+
+def apk(recommended_items, relevant_items, k):
+    precisions = [precision_at_k(recommended_items, relevant_items, i) for i in range(1, k)]
+
+    return sum(precisions)/ k
+
+
+def mapk(recommended_items, relevant_items, k):
+    return np.mean([apk(a,p,k) for a,p in zip(recommended_items, relevant_items)])
+
+
+recommended_items = [1, 2, 0, 12, 13, 3]
+relevant_items = [1, 2, 3, 4, 5, 6]
 
 k = 3
-precision_at_k_value = precision_at_k(y_true, y_scores, k)
-avg_precision_at_k_value = average_precision_at_k(y_true, y_scores, k)
+precision_at_k_value = precision_at_k(recommended_items, relevant_items, k)
+recall_at_k_value = recall_at_k(recommended_items, relevant_items, k)
+average_precisions_value = apk(recommended_items, relevant_items, k)
 
-print(f"Precision@{k} = {precision_at_k_value:.4f}")
-print(f"Average Precision@{k} = {avg_precision_at_k_value:.4f}")
+print(f"Precision@{k} = {precision_at_k_value:.2f}")
+print(f"Recall@{k} = {recall_at_k_value:.2f}")
+print(f"Average Precisions: {average_precisions_value}")
+
+recommended_items = [[1, 0, 2, 10, 3, 8, 4], [1, 2, 3]]
+relevant_items = [[1, 2, 3, 4], [0, 3, 7]]
+
+mean_average_precision_value = mapk(recommended_items, relevant_items, k)
+print(f"Mean Average Precision: {mean_average_precision_value:.2f}")
