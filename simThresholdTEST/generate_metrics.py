@@ -59,10 +59,7 @@ def recall_at_k(recommended_items, relevant_items, k):
 
 
 def apk(recommended_items, relevant_items, k):
-    precisions = [precision_at_k(recommended_items, relevant_items, i) for i in range(1, k)]
-    
-    if k == 1:
-        precisions = [precision_at_k(recommended_items, relevant_items, i) for i in range(1, k+1)]
+    precisions = [precision_at_k(recommended_items, relevant_items, i) for i in range(1, k+1)]
         
     return round(sum(precisions) / k, 2)
 
@@ -168,10 +165,6 @@ def calculate_hit_number(all_reciprocal_rank, k):
     all_reciprocal_rank[f'status@{k}'] = {}
 
     for rr in all_reciprocal_rank[f'results_k@{k}']:
-
-        if rr['hit_number'] == 0:
-            continue
-
         if f"hit_{rr['hit_number']}" in all_reciprocal_rank[f'status@{k}']:
             all_reciprocal_rank[f'status@{k}'][f"hit_{rr['hit_number']}"] += 1
 
@@ -258,7 +251,7 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
     num_queries = df_queries.shape[0]
 
     all_reciprocal_rank = {
-        'status': { 
+        'siamese_status': { 
             'num_queries': num_queries,
             'correct_predictions': clones_in_oracle.shape[0],
             'not_predict': not_predicted_clones.shape[0],
@@ -276,7 +269,7 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
         unique_so_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
         oracle_clones = get_qualitas_clones_in_dataframe_by_so_clone(row, df_clones)
         siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
-        
+
         for index, siamese_hit in enumerate(siamese_hit_attempts):
             clone_is_correct, oracle_clone_hit = check_clone_is_correct(oracle_clones, siamese_hit)
 
@@ -364,16 +357,15 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
     
     mrr = total_reciprocal_rank/num_queries
 
-    '''all_reciprocal_rank['status']['MAP@1'] = all_reciprocal_rank['status']['MAP@1']/num_queries
-    all_reciprocal_rank['status']['MAP@3'] = all_reciprocal_rank['status']['MAP@3']/num_queries
-    all_reciprocal_rank['status']['MAP@5'] = all_reciprocal_rank['status']['MAP@5']/num_queries'''
-    
     for relevant_k in list(relevants_clones):
         mapk_result = 0
         for rr in all_reciprocal_rank[f'results_k@{relevant_k}']:
             mapk_result += rr[f'APK@{relevant_k}']
         
-        all_reciprocal_rank[f'MAPK@{relevant_k}'] = mapk_result/num_queries
+        #all_reciprocal_rank[f'MAPK@{relevant_k}_QUERIES'] = mapk_result/num_queries
+        all_reciprocal_rank[f'status@{relevant_k}']['queries@k'] = len(all_reciprocal_rank[f'results_k@{relevant_k}'])
+        all_reciprocal_rank[f'MAPK@{relevant_k}'] = mapk_result/len(all_reciprocal_rank[f'results_k@{relevant_k}'])
+
 
     with open(f'reciprocal_rank_{simThreshold}/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
