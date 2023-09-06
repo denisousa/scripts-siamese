@@ -363,11 +363,6 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
             }
 
         all_reciprocal_rank['results'].append(rr)
-        try:
-            all_reciprocal_rank[f'results_k@{number_relevants}'].append(rr)
-        except:
-            all_reciprocal_rank[f'results_k@{number_relevants}'] = []
-            all_reciprocal_rank[f'results_k@{number_relevants}'].append(rr)
 
     all_reciprocal_rank = calculate_hit_number(all_reciprocal_rank)
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
@@ -380,7 +375,7 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
 
     all_reciprocal_rank['status']['mrr'] = mrr
 
-    with open(f'reciprocal_rank_{simThreshold}/{result_siamese_csv}.json', "w") as json_file:
+    with open(f'simThreshold_{simThreshold}/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
     return mrr
 
@@ -414,8 +409,8 @@ def calculate_complete_mrr(simThreshold):
         directory = f'output_{algorithm}_{simThreshold}'
         results_siamese_csv = get_files_in_folder(directory)
 
-        if not os.path.exists(f'reciprocal_rank_{simThreshold}'):
-            os.makedirs(f'reciprocal_rank_{simThreshold}')
+        if not os.path.exists(f'simThreshold_{simThreshold}'):
+            os.makedirs(f'simThreshold_{simThreshold}')
 
         mrr_by_siamese_result = {}
         mrr_results_by_algorithm = []
