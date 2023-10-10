@@ -2,6 +2,7 @@ import pandas as pd
 from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
 from parameters_operations import get_parameters_in_dict
+from itertools import product
 import copy
 import json
 import os
@@ -72,11 +73,14 @@ def find_float_numbers(input_string):
     float_numbers = re.findall(r'\b\d+\.\d+\b', input_string)
     return [float(num) for num in float_numbers]
 
+def find_lines_with_runtime(filename):
+    result = []
+    with open(filename, 'r') as file:
+        for line in file:
+            if 'Runtime:' in line:
+                result.append(line.strip().replace('Runtime: ', ''))
+    return result
 
-def extract_text_between_hyphens_and_underscores(input_string):
-    pattern = r'-(.*?)\_'
-    matches = re.findall(pattern, input_string)
-    return matches
 
 def get_files_in_folder(folder_path):
     files = os.listdir(folder_path)
@@ -86,23 +90,25 @@ def get_files_in_folder(folder_path):
 
 
 def check_clone_is_correct(oracle_clones_list, siamese_clone):
-    siamese_clone = {'start2': siamese_clone[1], 'end2': siamese_clone[2]}
+    siamese_clone = {'file2': siamese_clone[0], 'start2': siamese_clone[1], 'end2': siamese_clone[2]}
     
     for oracle_clone in oracle_clones_list:
-        oracle_clone = {'file1': oracle_clone[0], 'start2': oracle_clone[1], 'end2': oracle_clone[2]}
+        oracle_clone = {'file2': oracle_clone[0], 'start2': oracle_clone[1], 'end2': oracle_clone[2]}
+
+        file2_condition = oracle_clone['file2'] == siamese_clone['file2']
 
         # Oracle inside Siamese
         start2_condition = oracle_clone['start2'] >= siamese_clone['start2']
         end2_condition = oracle_clone['end2'] <= siamese_clone['end2']
 
-        if start2_condition and end2_condition:
+        if file2_condition and start2_condition and end2_condition:
             return True, list(oracle_clone.values())
             
         # Siamese inside Oracle
         start2_condition = oracle_clone['start2'] <= siamese_clone['start2']
         end2_condition = oracle_clone['end2'] >= siamese_clone['end2']
 
-        if start2_condition and end2_condition:
+        if file2_condition and start2_condition and end2_condition:
             return True, list(oracle_clone.values())
 
     return False, list(oracle_clone.values())
@@ -258,12 +264,12 @@ def remove_precision_recall_apk(rr, i):
     del rr[f'APK@{i}']
     return rr
 
-def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
+def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
     # File1 -> Stackoverflow 
     # File2 -> Qualitas Corpus
 
     total_reciprocal_rank = 0.0
-    print(simThreshold, result_siamese_csv)
+    print(result_siamese_csv)
     
     so_clones = get_so_clones_from_oracle(df_clones, df_siamese)
     clones_in_oracle = so_clones['correct_predictions']
@@ -291,7 +297,8 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
         siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
 
         for index, siamese_hit in enumerate(siamese_hit_attempts):
-            clone_is_correct, oracle_clone_hit = check_clone_is_correct(oracle_clones, siamese_hit)
+
+            clone_is_correct, _ = check_clone_is_correct(oracle_clones, siamese_hit)
 
             if clone_is_correct:
                 reciprocal_rank += 1/(index+1)
@@ -312,7 +319,7 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
                 total_reciprocal_rank += 0
                 rr = {
                     'clone_SO': f'{unique_so_clone}',
-                    'reciprocal_rank': reciprocal_rank,
+                    'reciprocal_rank': 0,
                     'hit_number' : 0,
                     'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
                     'siamese_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in siamese_hit_attempts],
@@ -321,7 +328,6 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
                     }
                 break
 
-        
 
         rr['k_hits_correct'] = get_k_hits(siamese_hit_attempts, oracle_clones)
 
@@ -344,7 +350,6 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
 
     for _, row in not_predicted_clones.iterrows():
         oracle_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
-
         oracle_clones = get_qualitas_clones_in_dataframe_by_so_clone(row, df_clones)
         
         rr = {
@@ -376,21 +381,34 @@ def calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones):
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
     
     mrr = total_reciprocal_rank/num_queries
-    all_reciprocal_rank[f'mrr'] = mrr
+    all_reciprocal_rank[f'mrr'] = '{:.3}'.format(mrr)
 
     for k in number_relevants_clones:
         mapk_result = 0
         if f'results_k@{k}' in all_reciprocal_rank: 
             for rr in all_reciprocal_rank[f'results_k@{k}']:
                 mapk_result += rr[f'APK@{k}']
-        
+
             all_reciprocal_rank[f'status@{k}']['queries@k'] = len(all_reciprocal_rank[f'results_k@{k}'])
-            all_reciprocal_rank[f'MAPK@{k}'] = mapk_result/len(all_reciprocal_rank[f'results_k@{k}'])
+            
+            if mapk_result == 0:
+                all_reciprocal_rank[f'MAP@{k}'] = mapk_result
+                break 
 
+            all_reciprocal_rank[f'MAP@{k}'] = '{:.3}'.format(mapk_result/len(all_reciprocal_rank[f'results_k@{k}']))
+            
 
-    with open(f'simThreshold_{simThreshold}/{result_siamese_csv}.json', "w") as json_file:
+            if 'hit_None' in all_reciprocal_rank[f'status@{k}']:
+                number_hit_none = all_reciprocal_rank[f'status@{k}']['hit_None']
+                precision_queries = len(all_reciprocal_rank[f'results_k@{k}']) - number_hit_none 
+                
+                all_reciprocal_rank[f'status@{k}']['queries@k'] = precision_queries
+                all_reciprocal_rank[f'MAP@{k}'] =  '{:.3}'.format(mapk_result/precision_queries)
+                 
+
+    with open(f'./result_metrics/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
-    return mrr
+    return mrr, all_reciprocal_rank
 
 def calculate_one_mrr(directory, result_siamese_csv):
     df_siamese = format_siamese_output(directory, result_siamese_csv)
@@ -398,38 +416,22 @@ def calculate_one_mrr(directory, result_siamese_csv):
     df_clones = filter_oracle(df_clones)
     return calculate_mrr(df_siamese, df_clones)
 
-def calculate_complete_mrr(simThreshold):
+def calculate_complete_mrr():
     df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     get_problemns_in_oracle(df_clones)
     # optimization_algorithms = ['grid_search', 'random_search', 'bayesian_search']
     optimization_algorithms = ['grid_search']
-    columns = ['index',
-               'filename',
-               'cloneSize',
-               'ngramSize',
-               'qrNorm',
-               'normBoost',
-               'T2Boost',
-               'T1Boost',
-               'origBoost',
-               #'time',
-               'mrr']
-
     open('error_siamese_execution.txt', 'w').write('')
 
     for algorithm in optimization_algorithms:
-        directory = f'output_{algorithm}_{simThreshold}'
+        directory = f'output_{algorithm}'
         results_siamese_csv = get_files_in_folder(directory)
-
-        if not os.path.exists(f'simThreshold_{simThreshold}'):
-            os.makedirs(f'simThreshold_{simThreshold}')
 
         mrr_by_siamese_result = {}
         mrr_results_by_algorithm = []
-        all_result_time = open(f'./{algorithm}_result_time.txt', 'r').read()
-        result_time = list(map(float, find_float_numbers(all_result_time)))
-        result_time = [round((int(str(time).replace('.',''))/60),2) for time in result_time]
+
+        result_time = find_lines_with_runtime(f'{algorithm}_result_time.txt')
 
         for index, result_siamese_csv in enumerate(results_siamese_csv):
             if result_siamese_csv == 'README.md':
@@ -438,39 +440,75 @@ def calculate_complete_mrr(simThreshold):
             try:
                 df_siamese = format_siamese_output(directory, result_siamese_csv)
                 # df = pd.read_csv(f'./output_grid_search_{simThreshold}/{result_siamese_csv}')
-                mrr_result = calculate_mrr(simThreshold, result_siamese_csv, df_siamese, df_clones)
-                mrr_by_siamese_result[result_siamese_csv] = mrr_result
+                mrr_result, all_rr = calculate_mrr(result_siamese_csv, df_siamese, df_clones)
+                mrr_by_siamese_result[result_siamese_csv] = mrr_result 
             except Exception as inst:
                 print(inst)
                 open('error_siamese_execution.txt', 'a').write(f'{result_siamese_csv}\n')
                 print(f'error in {result_siamese_csv}')
                 continue
 
-            params = extract_text_between_hyphens_and_underscores(result_siamese_csv)
-            params = [int(num) for num in params]
+            params_str = result_siamese_csv.replace('.csv', '').split('_')[:-1]
+            params_int = [int(param) for param in params_str]
             
             mrr_result_row = [index+1]
-            mrr_result_row.append(result_siamese_csv)
+            # mrr_result_row.append(result_siamese_csv)
+            mrr_result_row.append(simThreshold_title)
             for param in params:
                 mrr_result_row.append(param)
             # mrr_result_row.append(result_time[index])
-            mrr_result_row.append(mrr_result)
+            mrr_result_row.append('{:.3}'.format(mrr_result))
 
-            mrr_results_by_algorithm.append(mrr_result_row)
+            
+            for k in k_s:
+                try:
+                    mrr_result_row.append(all_rr[f'MAP@{k}'])
+                except:
+                    mrr_result_row.append(0)
         
-        mrr_results_by_algorithm.append([None for _ in range(10)])
+            mrr_results_by_algorithm.append(mrr_result_row)
+    
+        # mrr_results_by_algorithm.append([None for _ in range(20)])
         df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
+        df_metric.loc[len(df_metric)] = [None for _ in range(20)]
   
     return df_metric
 
+columns = ['index',
+            #'filename',
+            'simThreshold',
+            'cloneSize',
+            'ngramSize',
+            'qrNorm',
+            'normBoost',
+            'T2Boost',
+            'T1Boost',
+            'origBoost',
+            'mrr']
+
+k_s = [1,2,3,4,5,6,7,8,24,26]
+for k in k_s:
+    columns.append(f'MAP@{k}')
+
+param = [
+    [4, 6, 8], # ngram
+    [6, 10], # minCloneSize
+    [8, 10], # QRPercentileNorm
+    [8, 10], # QRPercentileT2
+    [8, 10], # QRPercentileT1
+    [8, 10], # QRPercentileOrig
+    [-1, 10], # normBoost
+    [-1, 10], # t2Boost
+    [-1, 10], # t1Boost
+    [-1, 10], # origBoost
+    ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
+]
+
+combinations = list(product(*param)) 
+
 results = {}
 df_result = pd.DataFrame()
-simThreshold_list = [10,20,30,40,50,60,70,80,90]
-for simThreshold in simThreshold_list:
-    df_metrics = calculate_complete_mrr(simThreshold)
-    df_metrics['simThreshold'] = f'{simThreshold}%,{simThreshold}%,{simThreshold}%,{simThreshold}%'
-    df_result = pd.concat([df_result, df_metrics])
-    df_result.at[df_result.index[-1], 'simThreshold'] = None
-
+df_metrics = calculate_complete_mrr()
+df_result = pd.concat([df_result, df_metrics])
 
 df_result.to_excel(f'mrr_result.xlsx', index=False)

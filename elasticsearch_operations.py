@@ -10,7 +10,7 @@ def get_ngram_by_port():
     return ngram_by_port
 
 def create_one_cluster_elasticserach(ngram, port):
-    elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
+    elasticsearch_path = '../../siamese-optmization/elasticsearch-siamese'
     command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
     command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
@@ -24,7 +24,7 @@ def create_one_cluster_elasticserach(ngram, port):
     print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram}\n')
 
 def create_clusters_elasticserach():
-    elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
+    elasticsearch_path = '../../siamese-optmization/elasticsearch-siamese'
     clusters = [5,7,9,11,13,15,17,19,21,23]
     for ngram_i in clusters:
         port = 9000 + ngram_i
@@ -68,9 +68,6 @@ def execute_cluster_elasticserach(ngram):
     process = subprocess.Popen(command_execute, shell=True)
     process.wait()
     sleep(7)
-    #os.system(command_execute)
-    #process = subprocess.Popen(command_execute, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
-    #process.wait()
 
 def stop_cluster_elasticserach(ngram):
     port = 9000 + ngram
@@ -83,7 +80,7 @@ def change_cluster_name(ngram_size):
     process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=None, stderr=None, close_fds=True)
     process.wait()
 
-    elasticsearch_yml_path = '../siamese-optmization/elasticsearch-2.2.0/config/elasticsearch.yml'
+    elasticsearch_yml_path = '../../siamese-optmization/elasticsearch-2.2.0/config/elasticsearch.yml'
     pattern = r"cluster\.name:\s*(.*?)\s*\n"
     elasticsearch_yml_text = open(elasticsearch_yml_path, 'r').read()
     cluster_name = re.search(pattern, elasticsearch_yml_text).group(1)
@@ -92,6 +89,6 @@ def change_cluster_name(ngram_size):
     open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_text)
 
 
-    command = f'../siamese-optmization/elasticsearch-2.2.0/bin/elasticsearch'
+    command = f'../../siamese-optmization/elasticsearch-2.2.0/bin/elasticsearch'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()

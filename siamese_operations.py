@@ -59,8 +59,8 @@ def get_recall_precision_f1_score(X, Y):
     return random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
 
 def remove_first_backslash(path):
-    if 'stackoverflow_filtered/' in path:
-        path = path.replace('stackoverflow_filtered/','')
+    if 'cut_stackoverflow_filtered/' in path:
+        path = path.replace('cut_stackoverflow_filtered/','')
     
     if 'qualitas_corpus_clean/' in path:
         path = path.replace('qualitas_corpus_clean/','')
