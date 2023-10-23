@@ -1,8 +1,10 @@
 from siamese_search import execute_siamese_search
 from datetime import datetime
 from itertools import product
-import time
+from files_operations import most_recent_file
 import re
+import os
+
 
 def cofigure_text(text):
     text = text.replace('cloneSize-','')
@@ -69,46 +71,29 @@ def evaluate_tool(parms):
 def execute_grid_search(combinations):
     algorithm = 'grid_search'
 
-    start_total_time = time.time()
+    start_total_time = datetime.now()
     for i, combination in enumerate(combinations):
+        i += 1
+
         start_time = datetime.now()
-        print(f"Count {i}")
+        print(f"\n\nCount {i}")
         print(f"Combination {combination}")
         evaluate_tool(combination)
 
         end_time = datetime.now()
         exec_time = end_time - start_time
+
         print(f"Runtime: {exec_time}")
-
-        count = 0
-        wrong_time_exec = 15
-
-        if exec_time.seconds > wrong_time_exec:
-            open(f'{algorithm}_result_time.txt', 'a').write(f'Success execution ')
-
-        else:
-            while True:
-                count += 1
-                open(f'{algorithm}_result_time.txt', 'a').write(f'Problem execution (< {wrong_time_exec}s | count {count}) \n')
-                
-                start_time = datetime.now()
-                evaluate_tool(combination)
-                end_time = datetime.now()
-
-                exec_time = end_time - start_time
-                if exec_time.seconds > wrong_time_exec:
-                   open(f'{algorithm}_result_time.txt', 'a').write(f'Success execution ')
-                   break
- 
+        open(f'{algorithm}_result_time.txt', 'a').write(f'Success execution ')
         open(f'{algorithm}_result_time.txt', 'a').write( f'{combination} \nRuntime: {exec_time}\n\n')
 
     total_execution_time = end_time - start_total_time
     print(f"Total execution time: {total_execution_time}")
-    open(f'{algorithm}_result_time.txt', 'a').write(f"Total execution time: {total_execution_time}")
+    open(f'{algorithm}_result_time.txt', 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 
 param = [
-    [4, 6, 8], # ngram
+    [6, 4, 8], # ngram
     [6, 10], # minCloneSize
     [8, 10], # QRPercentileNorm
     [8, 10], # QRPercentileT2
@@ -119,8 +104,23 @@ param = [
     [-1, 10], # t1Boost
     [-1, 10], # origBoost
     ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
-    # ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold
 ]
+
+
+param = [
+    [8, 4, 6], # ngram
+    [6, 10], # minCloneSize
+    [8], # QRPercentileNorm
+    [8], # QRPercentileT2
+    [8], # QRPercentileT1
+    [8], # QRPercentileOrig
+    [-1], # normBoost
+    [-1], # t2Boost
+    [-1], # t1Boost
+    [-1], # origBoost
+    ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
+]
+
 
 combinations = list(product(*param))
 

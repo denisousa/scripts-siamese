@@ -1,21 +1,31 @@
 from elasticsearch_operations import execute_cluster_elasticserach, stop_cluster_elasticserach
 from files_operations import most_recent_file
 import subprocess
+import uuid
 import os
 import gc
+import re
+
+def finish_siamese_process(output_path, properties_path):
+    most_recent_siamese_output, _ = most_recent_file(output_path)
+    new_output_name = properties_path.split('/')[-1].replace('.properties', f'_{uuid.uuid4()}.csv')
+    os.rename(f'{output_path}/{most_recent_siamese_output}', f'{output_path}/{new_output_name}')
+    gc.collect()
+    os.system('sync')
 
 def get_config_path(parms):
-    clonesSize = f'{parms["minCloneSize"]}_'
-    ngramSize = f'{parms["ngramSize"]}_'
-    QRPercentileNorm = f'{parms["QRPercentileNorm"]}_'
-    QRPercentileT2 = f'{parms["QRPercentileT2"]}_'
-    QRPercentileT1 = f'{parms["QRPercentileT1"]}_'
-    QRPercentileOrig = f'{parms["QRPercentileOrig"]}_'
-    normBoost = f'{parms["normBoost"]}_'
-    t2Boost = f'{parms["t2Boost"]}_'
-    t1Boost = f'{parms["t1Boost"]}_'
-    origBoost = f'{parms["origBoost"]}_'
-    config_name = clonesSize + ngramSize + QRPercentileNorm + QRPercentileT2 + QRPercentileT1 + QRPercentileOrig  + normBoost + t2Boost + t1Boost + origBoost
+    clonesSize = f'cS_{parms["minCloneSize"]}_'
+    ngramSize = f'nS_{parms["ngramSize"]}_'
+    QRPercentileNorm = f'qrN_{parms["QRPercentileNorm"]}_'
+    QRPercentileT2 = f'qrT2_{parms["QRPercentileT2"]}_'
+    QRPercentileT1 = f'qrT1_{parms["QRPercentileT1"]}_'
+    QRPercentileOrig = f'qrO_{parms["QRPercentileOrig"]}_'
+    normBoost = f'boN_{parms["normBoost"]}_'
+    t2Boost = f'boT2_{parms["t2Boost"]}_'
+    t1Boost = f'boT1_{parms["t1Boost"]}_'
+    origBoost = f'boOr_{parms["origBoost"]}_'
+    simThreshold = f'simT_{parms["simThreshold"]}'
+    config_name = ngramSize + clonesSize + QRPercentileNorm + QRPercentileT2 + QRPercentileT1 + QRPercentileOrig  + normBoost + t2Boost + t1Boost + origBoost + simThreshold
     destination_file = f'./configurations_{parms["algorithm"]}'
     return f'{destination_file}/{config_name}.properties'
 
@@ -47,6 +57,7 @@ def generate_config_file(parms):
     return properties_path
 
 def execute_siamese_search(**parms):
+
     stop_cluster_elasticserach(parms["ngramSize"])
     execute_cluster_elasticserach(parms["ngramSize"])
 
@@ -59,12 +70,26 @@ def execute_siamese_search(**parms):
         os.makedirs(output_path)
 
     command = f'java -jar ./siamese-0.0.6-SNAPSHOT.jar -c search -i {index_path} -o {output_path} -cf ./{properties_path}'
-    process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+    process = subprocess.Popen(command,
+                               shell=True,
+                               stdout=subprocess.PIPE,
+                               stderr=None,
+                               close_fds=True)
     process.wait()
 
+    stdout = process.stdout.read().decode('utf-8')
+    print(f'\n\n{stdout}\n\n')
+
+
+    if 'does not exist' in stdout:
+        # In this case the output file is not created
+        execute_siamese_search(**parms)
+
+    siamese_result_filename, siamese_result_text = most_recent_file(output_path)
+    format_result_text = re.sub(r'\s', '', siamese_result_text)
+    if format_result_text == '':
+        os.remove(f'{output_path}/{siamese_result_filename}')
+        execute_siamese_search(**parms)
+
     stop_cluster_elasticserach(parms["ngramSize"])
-    most_recent_siamese_output = most_recent_file(output_path)
-    new_output_name = properties_path.split('/')[-1].replace('properties', 'csv')
-    os.rename(f'{output_path}/{most_recent_siamese_output}', f'{output_path}/{new_output_name}')
-    # gc.collect()
-    # os.system('sync')
+    finish_siamese_process(output_path, properties_path)

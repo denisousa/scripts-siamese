@@ -7,18 +7,18 @@ import json
 import os
 import re
 
-number_folder = 90
-
+def find_lines_with_specific_text(filename, text):
+    result = []
+    with open(filename, 'r') as file:
+        for line in file:
+            if text in line:
+                result.append(line.strip().replace(text, '').strip())
+    return result
 
 def find_float_numbers(input_string):
     float_numbers = re.findall(r'\b\d+\.\d+\b', input_string)
     return [float(num) for num in float_numbers]
 
-
-def extract_text_between_hyphens_and_underscores(input_string):
-    pattern = r'-(.*?)\_'
-    matches = re.findall(pattern, input_string)
-    return matches
 
 def get_files_in_folder(folder_path):
     files = os.listdir(folder_path)
@@ -147,8 +147,6 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
     # File1 -> Stackoverflow 
     # File2 -> Qualitas Corpus
 
-    global number_folder
-
     total_reciprocal_rank = 0.0
     exact_clones_in_oracle = get_clones_that_in_oracle(df_clones, df_siamese)
     # Situação de estar dentro do outro
@@ -229,7 +227,7 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
 
     all_reciprocal_rank = calculate_hit_number(all_reciprocal_rank)
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
-    with open(f'reciprocal_rank_{number_folder}/{result_siamese_csv}.json', "w") as json_file:
+    with open(f'reciprocal_rank/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
 
     mrr = total_reciprocal_rank/num_queries
@@ -253,12 +251,16 @@ def calculate_complete_mrr():
                'filename',
                'cloneSize',
                'ngramSize',
-               'qrNorm',
+               'QRPercentileNorm',
+               'QRPercentileT2',
+               'QRPercentileT1',
+               'QRPercentileOrig',
                'normBoost',
                'T2Boost',
                'T1Boost',
                'origBoost',
-               #'time',
+               'simThreshold'
+               'time',
                'mrr']
 
     open('error_siamese_execution.txt', 'w').write('')
@@ -266,14 +268,12 @@ def calculate_complete_mrr():
 
     for algorithm in optimization_algorithms:
         print(algorithm)
-        directory = f'output_{algorithm}_{number_folder}'
+        directory = f'output_{algorithm}'
         results_siamese_csv = get_files_in_folder(directory)
 
         mrr_by_siamese_result = {}
         mrr_results_by_algorithm = []
-        all_result_time = open(f'./{algorithm}_result_time.txt', 'r').read()
-        result_time = list(map(float, find_float_numbers(all_result_time)))
-        result_time = [round((int(str(time).replace('.',''))/60),2) for time in result_time]
+        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
 
         for index, result_siamese_csv in enumerate(results_siamese_csv):
             if result_siamese_csv == 'README.md':
@@ -287,18 +287,17 @@ def calculate_complete_mrr():
                 open('error_siamese_execution.txt', 'a').write(f'{result_siamese_csv}\n')
                 print(f'error in {result_siamese_csv}')
                 continue
-
-            params = extract_text_between_hyphens_and_underscores(result_siamese_csv)
-            params = [int(num) for num in params]
             
-            mrr_result_row = [index+1]
-            mrr_result_row.append(result_siamese_csv)
-            for param in params:
-                mrr_result_row.append(param)
-            # mrr_result_row.append(result_time[index])
-            mrr_result_row.append(mrr_result)
+            params = enumerate(result_siamese_csv.replace('.csv', '').split('_'))
+            params = [param for i, param in params if i % 2 == 1]
+            
+            row = [index+1,
+                   result_siamese_csv,
+                   *params,
+                   all_result_time[index],
+                   mrr_result]
 
-            mrr_results_by_algorithm.append(mrr_result_row)
+            mrr_results_by_algorithm.append(row)
 
         with open(f'mrr_{algorithm}.json', "w") as json_file:
             json.dump(mrr_by_siamese_result, json_file, indent=4)

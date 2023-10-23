@@ -9,6 +9,16 @@ import os
 import re
 import numpy as np
 
+
+def find_lines_with_specific_text(filename, text):
+    result = []
+    with open(filename, 'r') as file:
+        for line in file:
+            if text in line:
+                result.append(line.strip().replace(text, '').strip())
+    return result
+
+
 def get_k_hits(recommended_items, relevant_items):
     recommended_and_relevant = []
 
@@ -269,7 +279,7 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
     # File2 -> Qualitas Corpus
 
     total_reciprocal_rank = 0.0
-    print(result_siamese_csv)
+    # print(result_siamese_csv)
     
     so_clones = get_so_clones_from_oracle(df_clones, df_siamese)
     clones_in_oracle = so_clones['correct_predictions']
@@ -410,13 +420,8 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
         json.dump(all_reciprocal_rank, json_file, indent=4)
     return mrr, all_reciprocal_rank
 
-def calculate_one_mrr(directory, result_siamese_csv):
-    df_siamese = format_siamese_output(directory, result_siamese_csv)
-    df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
-    df_clones = filter_oracle(df_clones)
-    return calculate_mrr(df_siamese, df_clones)
-
 def calculate_complete_mrr():
+
     df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     get_problemns_in_oracle(df_clones)
@@ -431,8 +436,7 @@ def calculate_complete_mrr():
         mrr_by_siamese_result = {}
         mrr_results_by_algorithm = []
 
-        result_time = find_lines_with_runtime(f'{algorithm}_result_time.txt')
-
+        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
             if result_siamese_csv == 'README.md':
                 continue
@@ -448,16 +452,15 @@ def calculate_complete_mrr():
                 print(f'error in {result_siamese_csv}')
                 continue
 
-            params_str = result_siamese_csv.replace('.csv', '').split('_')[:-1]
-            params_int = [int(param) for param in params_str]
+            params_str = result_siamese_csv.replace('.csv', '').split('_')
+            params = [param for i_,param in enumerate(params_str) if i_ % 2]
             
-            mrr_result_row = [index+1]
-            # mrr_result_row.append(result_siamese_csv)
-            mrr_result_row.append(simThreshold_title)
-            for param in params:
-                mrr_result_row.append(param)
-            # mrr_result_row.append(result_time[index])
-            mrr_result_row.append('{:.3}'.format(mrr_result))
+            mrr_result_row = [index+1,
+                   result_siamese_csv,
+                   *params,
+                   all_result_time[index],
+                   '{:.3}'.format(mrr_result),
+                   ]
 
             
             for k in k_s:
@@ -467,44 +470,40 @@ def calculate_complete_mrr():
                     mrr_result_row.append(0)
         
             mrr_results_by_algorithm.append(mrr_result_row)
-    
+
+            df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
+            df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
+            
+            try:
+                df_metric.to_excel(f'mrr_result.xlsx', index=False)
+            except:
+                print(index)
+        
         # mrr_results_by_algorithm.append([None for _ in range(20)])
         df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
-        df_metric.loc[len(df_metric)] = [None for _ in range(20)]
-  
+        df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
+        
     return df_metric
 
 columns = ['index',
-            #'filename',
-            'simThreshold',
-            'cloneSize',
-            'ngramSize',
-            'qrNorm',
-            'normBoost',
-            'T2Boost',
-            'T1Boost',
-            'origBoost',
-            'mrr']
+        'filename',
+        'cloneSize',
+        'ngramSize',
+        'QRPercentileNorm',
+        'QRPercentileT2',
+        'QRPercentileT1',
+        'QRPercentileOrig',
+        'normBoost',
+        'T2Boost',
+        'T1Boost',
+        'origBoost',
+        'simThreshold',
+        'time',
+        'mrr']
 
 k_s = [1,2,3,4,5,6,7,8,24,26]
 for k in k_s:
     columns.append(f'MAP@{k}')
-
-param = [
-    [4, 6, 8], # ngram
-    [6, 10], # minCloneSize
-    [8, 10], # QRPercentileNorm
-    [8, 10], # QRPercentileT2
-    [8, 10], # QRPercentileT1
-    [8, 10], # QRPercentileOrig
-    [-1, 10], # normBoost
-    [-1, 10], # t2Boost
-    [-1, 10], # t1Boost
-    [-1, 10], # origBoost
-    ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
-]
-
-combinations = list(product(*param)) 
 
 results = {}
 df_result = pd.DataFrame()

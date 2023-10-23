@@ -8,7 +8,7 @@ def most_recent_file(directory):
     paths = [os.path.join(directory, file) for file in files]
     most_recent = max(paths, key=os.path.getctime)
     most_recent_name = os.path.basename(most_recent)
-    return most_recent_name
+    return most_recent_name, open(f'{directory}/{most_recent_name}', 'r').read()
 
 def delete_files_in_folder(folder_path):
     files = os.listdir(folder_path)
