@@ -1,3 +1,0 @@
-from metric_mrr import calculate_complete_mrr
-
-calculate_complete_mrr()

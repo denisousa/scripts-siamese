@@ -2,7 +2,6 @@ import pandas as pd
 from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
 from parameters_operations import get_parameters_in_dict
-from itertools import product
 import copy
 import json
 import os
@@ -17,7 +16,6 @@ def find_lines_with_specific_text(filename, text):
             if text in line:
                 result.append(line.strip().replace(text, '').strip())
     return result
-
 
 def get_k_hits(recommended_items, relevant_items):
     recommended_and_relevant = []
@@ -35,7 +33,6 @@ def get_k_hits(recommended_items, relevant_items):
        
     return f'{hit}'
 
-
 def precision_at_k(recommended_items, relevant_items, k):
     recommended_items = recommended_items[:k]
     recommended_and_relevant = []
@@ -49,7 +46,6 @@ def precision_at_k(recommended_items, relevant_items, k):
             recommended_and_relevant.append(item)
        
     return round(len(recommended_and_relevant) / k, 2)
-
 
 def recall_at_k(recommended_items, relevant_items, k):
     recommended_items = recommended_items[:k]
@@ -68,16 +64,13 @@ def recall_at_k(recommended_items, relevant_items, k):
     
     return round(len(recommended_and_relevant) / len(relevant_items), 2)
 
-
 def apk(recommended_items, relevant_items, k):
     precisions = [precision_at_k(recommended_items, relevant_items, i) for i in range(1, k+1)]
         
     return round(sum(precisions) / k, 2)
 
-
 def mapk(recommended_items, relevant_items, k):
     return round(np.mean([apk(a,p,k) for a,p in zip(recommended_items, relevant_items)]),2)
-
 
 def find_float_numbers(input_string):
     float_numbers = re.findall(r'\b\d+\.\d+\b', input_string)
@@ -91,13 +84,11 @@ def find_lines_with_runtime(filename):
                 result.append(line.strip().replace('Runtime: ', ''))
     return result
 
-
 def get_files_in_folder(folder_path):
     files = os.listdir(folder_path)
     file_times = [(os.path.join(folder_path, file), os.path.getctime(os.path.join(folder_path, file))) for file in files]
     sorted_files = sorted(file_times, key=lambda x: x[1])
     return [file_path.split('/')[-1] for file_path, _ in sorted_files]
-
 
 def check_clone_is_correct(oracle_clones_list, siamese_clone):
     siamese_clone = {'file2': siamese_clone[0], 'start2': siamese_clone[1], 'end2': siamese_clone[2]}
@@ -123,7 +114,6 @@ def check_clone_is_correct(oracle_clones_list, siamese_clone):
 
     return False, list(oracle_clone.values())
 
-
 def get_qualitas_clones_in_dataframe_by_so_clone(so_clone, dataframe):
     df_matched_rows = dataframe[
         (dataframe['file1'] == so_clone['file1']) &
@@ -132,7 +122,6 @@ def get_qualitas_clones_in_dataframe_by_so_clone(so_clone, dataframe):
     df_matched_rows = df_matched_rows[['file2', 'start2', 'end2']]
     df_matched_rows.reset_index(drop=True, inplace=True)
     return df_matched_rows.values.tolist()
-
 
 def get_problemns_in_oracle(df_clones):
     problems_in_oracle = {}
@@ -175,7 +164,6 @@ def get_problemns_in_oracle(df_clones):
     with open('problems_in_oracle.json', "w") as json_file:
         json.dump(problems_in_oracle, json_file, indent=2)
     return problems_in_oracle
-
 
 def calculate_hit_number(all_reciprocal_rank, k):
     all_reciprocal_rank[f'status@{k}'] = {}
@@ -274,7 +262,7 @@ def remove_precision_recall_apk(rr, i):
     del rr[f'APK@{i}']
     return rr
 
-def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
+def calculate_metrics(result_siamese_csv, df_siamese, df_clones):
     # File1 -> Stackoverflow 
     # File2 -> Qualitas Corpus
 
@@ -309,7 +297,6 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
         for index, siamese_hit in enumerate(siamese_hit_attempts):
 
             clone_is_correct, _ = check_clone_is_correct(oracle_clones, siamese_hit)
-
             if clone_is_correct:
                 reciprocal_rank += 1/(index+1)
                 total_reciprocal_rank += 1/(index+1)
@@ -420,13 +407,11 @@ def calculate_mrr(result_siamese_csv, df_siamese, df_clones):
         json.dump(all_reciprocal_rank, json_file, indent=4)
     return mrr, all_reciprocal_rank
 
-def calculate_complete_mrr():
-
+def get_metrics():
     df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     get_problemns_in_oracle(df_clones)
-    # optimization_algorithms = ['grid_search', 'random_search', 'bayesian_search']
-    optimization_algorithms = ['grid_search']
+    optimization_algorithms = ['grid_search', 'random_search']
     open('error_siamese_execution.txt', 'w').write('')
 
     for algorithm in optimization_algorithms:
@@ -438,13 +423,13 @@ def calculate_complete_mrr():
 
         all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
+
             if result_siamese_csv == 'README.md':
                 continue
 
             try:
                 df_siamese = format_siamese_output(directory, result_siamese_csv)
-                # df = pd.read_csv(f'./output_grid_search_{simThreshold}/{result_siamese_csv}')
-                mrr_result, all_rr = calculate_mrr(result_siamese_csv, df_siamese, df_clones)
+                mrr_result, all_rr = calculate_metrics(result_siamese_csv, df_siamese, df_clones)
                 mrr_by_siamese_result[result_siamese_csv] = mrr_result 
             except Exception as inst:
                 print(inst)
@@ -462,7 +447,6 @@ def calculate_complete_mrr():
                    '{:.3}'.format(mrr_result),
                    ]
 
-            
             for k in k_s:
                 try:
                     mrr_result_row.append(all_rr[f'MAP@{k}'])
@@ -475,11 +459,10 @@ def calculate_complete_mrr():
             df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
             
             try:
-                df_metric.to_excel(f'mrr_result.xlsx', index=False)
+                df_metric.to_excel(f'mrr_result_{algorithm}.xlsx', index=False)
             except:
                 print(index)
         
-        # mrr_results_by_algorithm.append([None for _ in range(20)])
         df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
         df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
         
@@ -507,7 +490,4 @@ for k in k_s:
 
 results = {}
 df_result = pd.DataFrame()
-df_metrics = calculate_complete_mrr()
-df_result = pd.concat([df_result, df_metrics])
-
-df_result.to_excel(f'mrr_result.xlsx', index=False)
+get_metrics()

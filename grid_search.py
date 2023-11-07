@@ -1,9 +1,7 @@
 from siamese_search import execute_siamese_search
 from datetime import datetime
 from itertools import product
-from files_operations import most_recent_file
 import re
-import os
 
 
 def cofigure_text(text):
@@ -106,23 +104,8 @@ param = [
     ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
 ]
 
-
-param = [
-    [8, 4, 6], # ngram
-    [6, 10], # minCloneSize
-    [8], # QRPercentileNorm
-    [8], # QRPercentileT2
-    [8], # QRPercentileT1
-    [8], # QRPercentileOrig
-    [-1], # normBoost
-    [-1], # t2Boost
-    [-1], # t1Boost
-    [-1], # origBoost
-    ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
-]
-
-
 combinations = list(product(*param))
+print(len(combinations))
 
 print("SE QUER EXECUTAR O STACKOVERFLOW FILTERED OU CUT, ALTERE EM: siamese_search.py")
 execute_grid_search(combinations)
