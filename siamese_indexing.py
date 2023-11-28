@@ -78,7 +78,8 @@ def execute_siamese_index(siamese_jar_path, project_path, properties_path):
 #create_one_cluster_elasticserach(24,9220)
 clusters = range(5,24)
 for i in clusters:
-    execute_siamese_index_properties(i)
+    execute_siamese_index_properties(8)
+    break
 #single_execution()
 #multiple_execution()
 

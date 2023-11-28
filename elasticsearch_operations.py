@@ -10,7 +10,7 @@ def get_ngram_by_port():
     return ngram_by_port
 
 def create_one_cluster_elasticserach(ngram, port):
-    elasticsearch_path = '../../siamese-optmization/elasticsearch-siamese'
+    elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
     command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
     command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'

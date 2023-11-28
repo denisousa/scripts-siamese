@@ -411,19 +411,18 @@ def get_metrics():
     df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     get_problemns_in_oracle(df_clones)
-    optimization_algorithms = ['grid_search', 'random_search']
+    optimization_algorithms = ['bayesian_search']
     open('error_siamese_execution.txt', 'w').write('')
 
     for algorithm in optimization_algorithms:
-        directory = f'output_{algorithm}'
+        directory = f'output_{algorithm} copy'
         results_siamese_csv = get_files_in_folder(directory)
 
         mrr_by_siamese_result = {}
-        mrr_results_by_algorithm = []
+        results_by_algorithm = []
 
-        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
+        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time copy.txt', 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
-
             if result_siamese_csv == 'README.md':
                 continue
 
@@ -440,7 +439,7 @@ def get_metrics():
             params_str = result_siamese_csv.replace('.csv', '').split('_')
             params = [param for i_,param in enumerate(params_str) if i_ % 2]
             
-            mrr_result_row = [index+1,
+            result_row = [index+1,
                    result_siamese_csv,
                    *params,
                    all_result_time[index],
@@ -449,21 +448,21 @@ def get_metrics():
 
             for k in k_s:
                 try:
-                    mrr_result_row.append(all_rr[f'MAP@{k}'])
+                    result_row.append(all_rr[f'MAP@{k}'])
                 except:
-                    mrr_result_row.append(0)
+                    result_row.append(0)
         
-            mrr_results_by_algorithm.append(mrr_result_row)
+            results_by_algorithm.append(result_row)
 
-            df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
+            df_metric = pd.DataFrame(results_by_algorithm, columns=columns)
             df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
             
             try:
-                df_metric.to_excel(f'mrr_result_{algorithm}.xlsx', index=False)
+                df_metric.to_excel(f'results_{algorithm}.xlsx', index=False)
             except:
                 print(index)
         
-        df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
+        df_metric = pd.DataFrame(results_by_algorithm, columns=columns)
         df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
         
     return df_metric
@@ -490,4 +489,5 @@ for k in k_s:
 
 results = {}
 df_result = pd.DataFrame()
-get_metrics()
+
+

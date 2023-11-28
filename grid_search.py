@@ -107,5 +107,7 @@ param = [
 combinations = list(product(*param))
 print(len(combinations))
 
+combinations[0] = [8,7,6,6,8,4,4,6,6,4,'20%,40%,60%,80%']
+
 print("SE QUER EXECUTAR O STACKOVERFLOW FILTERED OU CUT, ALTERE EM: siamese_search.py")
 execute_grid_search(combinations)

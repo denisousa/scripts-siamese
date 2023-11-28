@@ -57,9 +57,10 @@ def generate_config_file(parms):
     return properties_path
 
 def execute_siamese_search(**parms):
-
     stop_cluster_elasticserach(parms["ngramSize"])
     execute_cluster_elasticserach(parms["ngramSize"])
+    port = 9000 + int(parms["ngramSize"])
+    os.system(f'curl -X POST "http://localhost:{port}/_cluster/reroute"')
 
     project = 'cut_stackoverflow_filtered'
     properties_path = generate_config_file(parms)
