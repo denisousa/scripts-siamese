@@ -267,7 +267,6 @@ def calculate_metrics(result_siamese_csv, df_siamese, df_clones):
     # File2 -> Qualitas Corpus
 
     total_reciprocal_rank = 0.0
-    # print(result_siamese_csv)
     
     so_clones = get_so_clones_from_oracle(df_clones, df_siamese)
     clones_in_oracle = so_clones['correct_predictions']
@@ -407,22 +406,25 @@ def calculate_metrics(result_siamese_csv, df_siamese, df_clones):
         json.dump(all_reciprocal_rank, json_file, indent=4)
     return mrr, all_reciprocal_rank
 
-def get_metrics():
+def get_metrics(optimization_algorithms):
     df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
     get_problemns_in_oracle(df_clones)
-    optimization_algorithms = ['bayesian_search']
     open('error_siamese_execution.txt', 'w').write('')
 
     for algorithm in optimization_algorithms:
-        directory = f'output_{algorithm} copy'
+        directory = f'output_{algorithm}'
         results_siamese_csv = get_files_in_folder(directory)
 
         mrr_by_siamese_result = {}
-        results_by_algorithm = []
 
-        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time copy.txt', 'Runtime:')
+        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
+            mrr_results_by_algorithm = []
+
+            #result_siamese_csv = '_'.join(result_siamese_csv.split('_')[1:])
+            print(index, len(results_siamese_csv), algorithm)
+
             if result_siamese_csv == 'README.md':
                 continue
 
@@ -437,40 +439,54 @@ def get_metrics():
                 continue
 
             params_str = result_siamese_csv.replace('.csv', '').split('_')
-            params = [param for i_,param in enumerate(params_str) if i_ % 2]
+            if params_str[0] == 'nS':
+                params = [param for i_,param in enumerate(params_str) if i_ % 2 == 1]
+            else:
+                params = [param for i_,param in enumerate(params_str) if i_ % 2 == 0][1:]
             
-            result_row = [index+1,
+            result_siamese_csv = '_'.join(result_siamese_csv.split('_')[1:])
+            mrr_result_row = [index+1,
                    result_siamese_csv,
                    *params,
                    all_result_time[index],
                    '{:.3}'.format(mrr_result),
-                   ]
+                   ] 
 
             for k in k_s:
                 try:
-                    result_row.append(all_rr[f'MAP@{k}'])
+                    mrr_result_row.append(all_rr[f'MAP@{k}'])
                 except:
-                    result_row.append(0)
-        
-            results_by_algorithm.append(result_row)
+                    mrr_result_row.append(0)
 
-            df_metric = pd.DataFrame(results_by_algorithm, columns=columns)
+            mrr_results_by_algorithm.append(mrr_result_row)
+
+            df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
             df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
-            
-            try:
-                df_metric.to_excel(f'results_{algorithm}.xlsx', index=False)
-            except:
-                print(index)
-        
-        df_metric = pd.DataFrame(results_by_algorithm, columns=columns)
+
+            if index == 0:
+                df_metric.to_excel(f'{algorithm}_result.xlsx', index=False)
+
+            if index != 0:
+                df_final_metric = pd.read_excel(f'{algorithm}_result.xlsx')
+                df_metric = pd.concat([df_final_metric, df_metric])
+                try:
+                    df_metric.to_excel(f'{algorithm}_result.xlsx', index=False)
+                    del df_metric
+                except:
+                    print(index)
+
+            del mrr_results_by_algorithm
+
+        df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
         df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
         
     return df_metric
 
-columns = ['index',
+columns = [
+        'execution',
         'filename',
-        'cloneSize',
         'ngramSize',
+        'cloneSize',
         'QRPercentileNorm',
         'QRPercentileT2',
         'QRPercentileT1',
@@ -481,7 +497,8 @@ columns = ['index',
         'origBoost',
         'simThreshold',
         'time',
-        'mrr']
+        'mrr',
+        ]
 
 k_s = [1,2,3,4,5,6,7,8,24,26]
 for k in k_s:
@@ -489,5 +506,5 @@ for k in k_s:
 
 results = {}
 df_result = pd.DataFrame()
-
-
+optimization_algorithms = ['grid_search','random_search','bayesian_search']
+get_metrics(optimization_algorithms)

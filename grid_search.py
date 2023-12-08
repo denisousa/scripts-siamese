@@ -92,22 +92,33 @@ def execute_grid_search(combinations):
 
 param = [
     [6, 4, 8], # ngram
-    [6, 10], # minCloneSize
-    [8, 10], # QRPercentileNorm
-    [8, 10], # QRPercentileT2
-    [8, 10], # QRPercentileT1
-    [8, 10], # QRPercentileOrig
-    [-1, 10], # normBoost
-    [-1, 10], # t2Boost
-    [-1, 10], # t1Boost
-    [-1, 10], # origBoost
+    [6, 7, 8, 9, 10], # minCloneSize
+    [4, 5, 6, 7, 8, 9, 10], # QRPercentileNorm
+    [4, 5, 6, 7, 8, 9, 10], # QRPercentileT2
+    [4, 5, 6, 7, 8, 9, 10], # QRPercentileT1
+    [4, 5, 6, 7, 8, 9, 10], # QRPercentileOrig
+    [-1, 1, 4, 6, 10], # normBoost
+    [-1, 1, 4, 6, 10], # t2Boost
+    [-1, 1, 4, 6, 10], # t1Boost
+    [-1, 1, 4, 6, 10], # origBoost
     ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
 ]
 
+dimensions=[Categorical([4, 6, 8], name='ngramSize'),
+            Integer(6, 10, name='minCloneSize'),
+            Integer(4, 10, name='QRPercentileNorm'),
+            Integer(4, 10, name='QRPercentileT2'),
+            Integer(4, 10, name='QRPercentileT1'),
+            Integer(4, 10, name='QRPercentileOrig'),
+            Categorical([-1, 1, 4, 6, 10], name='normBoost'),
+            Categorical([-1, 1, 4, 6, 10], name='t2Boost'),
+            Categorical([-1, 1, 4, 6, 10], name='t1Boost'),
+            Categorical([-1, 1, 4, 6, 10], name='origBoost'),
+            Categorical(['30%,50%,70%,90%', '20%,40%,60%,80%'], name='simThreshold')]
+
+
 combinations = list(product(*param))
 print(len(combinations))
-
-combinations[0] = [8,7,6,6,8,4,4,6,6,4,'20%,40%,60%,80%']
 
 print("SE QUER EXECUTAR O STACKOVERFLOW FILTERED OU CUT, ALTERE EM: siamese_search.py")
 execute_grid_search(combinations)

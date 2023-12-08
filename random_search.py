@@ -40,11 +40,11 @@ def generate_combination():
                 random.randint(4, 10), # QRPercentileT2
                 random.randint(4, 10), # QRPercentileT1
                 random.randint(4, 10), # QRPercentileOrig
-                random.choice(boost), # normBoost
-                random.choice(boost), # t2Boost
-                random.choice(boost), # t1Boost
-                random.choice(boost), # origBoost
-                random.choice(simthreshold)] # simThreshold 
+                random.choice([-1, 1, 4, 6, 10]), # normBoost
+                random.choice([-1, 1, 4, 6, 10]), # t2Boost
+                random.choice([-1, 1, 4, 6, 10]), # t1Boost
+                random.choice([-1, 1, 4, 6, 10]), # origBoost
+                random.choice(['30%,50%,70%,90%', '20%,40%,60%,80%'])] # simThreshold 
 
     return combination
 
