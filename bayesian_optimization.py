@@ -9,24 +9,41 @@ from skopt import gp_minimize
 from skopt.space import Integer, Categorical
 from skopt.utils import use_named_args
 from siamese_search import execute_siamese_search
-from generate_metrics import calculate_metrics
+from generate_metrics import calculate_mrr_and_rr
 from datetime import datetime, timedelta
 from files_operations import most_recent_file
 import shutil
 import sys
 import os
+from random import uniform
 
-dimensions=[Categorical([4, 6, 8], name='ngramSize'),
-            Integer(6, 10, name='minCloneSize'),
-            Integer(4, 10, name='QRPercentileNorm'),
-            Integer(4, 10, name='QRPercentileT2'),
-            Integer(4, 10, name='QRPercentileT1'),
-            Integer(4, 10, name='QRPercentileOrig'),
-            Categorical([-1, 1, 4, 6, 10], name='normBoost'),
-            Categorical([-1, 1, 4, 6, 10], name='t2Boost'),
-            Categorical([-1, 1, 4, 6, 10], name='t1Boost'),
-            Categorical([-1, 1, 4, 6, 10], name='origBoost'),
-            Categorical(['30%,50%,70%,90%', '20%,40%,60%,80%'], name='simThreshold')]
+ngram = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+minclonesize = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+qrpercentile = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+boost = [-1, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+simthreshold = [
+    '10%,20%,30%,40%',
+    '20%,30%,40%,50%',
+    '30%,40%,50%,60%',
+    '40%,50%,60%,70%',
+    '50%,60%,70%,80%',
+    '60%,70%,80%,90%',
+    '10%,30%,40%,50%',
+    '20%,40%,60%,70%',
+    '30%,60%,80%,90%',
+]
+
+dimensions=[Categorical(ngram, name='ngramSize'),
+            Integer(6, 16, name='minCloneSize'),
+            Integer(2, 20, name='QRPercentileNorm'),
+            Integer(2, 20, name='QRPercentileT2'),
+            Integer(2, 20, name='QRPercentileT1'),
+            Integer(2, 20, name='QRPercentileOrig'),
+            Categorical(boost, name='normBoost'),
+            Categorical(boost, name='t2Boost'),
+            Categorical(boost, name='t1Boost'),
+            Categorical(boost, name='origBoost'),
+            Categorical(simthreshold, name='simThreshold')]
 
 
 @use_named_args(dimensions)
@@ -76,11 +93,11 @@ def evaluate_tool(**parms):
 
     most_recent_siamese_output, _ = most_recent_file(directory)
     df_siamese = format_siamese_output(directory, most_recent_siamese_output)
-    mrr, all_rr = calculate_metrics(most_recent_siamese_output, df_siamese, df_clones)
-    
+    all_rr = calculate_mrr_and_rr(most_recent_siamese_output, df_siamese, df_clones)
+    mrr = all_rr["MRR (Mean Reciprocal Rank)"]
     os.rename(f'{directory}/{most_recent_siamese_output}', f'{directory}/{i}_{most_recent_siamese_output}')
     
-    loss = float(all_rr["mrr"]) * -1
+    loss = float(mrr) * -1
 
     if grid_search_time <= total_execution_time:
         print(f"Total execution time: {total_execution_time}")
@@ -88,6 +105,7 @@ def evaluate_tool(**parms):
         print(f'Last Result - mrr:{mrr} | parms: {list(parms.values())}')
         sys.exit()
 
+    print(f'\n \n \n loss: {loss}\n \n \n')
     return loss
 
 
@@ -97,7 +115,9 @@ def execute_bayesian_search():
     result = gp_minimize(evaluate_tool,
                          dimensions=dimensions,
                          n_calls=all_combinations,
-                         random_state=40)
+                         random_state=42)
+    
+    print(f'FINAL RESULT: {result}')
 
 
 columns_parms = ['cloneSize',
@@ -114,12 +134,13 @@ columns_parms = ['cloneSize',
 
 algorithm = 'bayesian_search'
 directory = f'output_{algorithm}'
-grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
+# grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
+grid_search_time = timedelta(days=0, hours=3, minutes=10, seconds=49)
 start_total_time = datetime.now()
 df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
-df_grid_search_results = pd.read_excel('results_grid_search.xlsx')
+df_grid_search_results = pd.read_excel('result_grid_search.xlsx')
 grid_search_results = df_grid_search_results[columns_parms].values.tolist()
-df_random_search_results = pd.read_excel('results_random_search.xlsx')
+df_random_search_results = pd.read_excel('result_random_search.xlsx')
 random_search_results = df_random_search_results[columns_parms].values.tolist()
 df_clones = filter_oracle(df_clones)
 execute_bayesian_search()

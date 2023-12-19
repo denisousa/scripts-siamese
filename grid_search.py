@@ -104,18 +104,19 @@ param = [
     ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
 ]
 
-dimensions=[Categorical([4, 6, 8], name='ngramSize'),
-            Integer(6, 10, name='minCloneSize'),
-            Integer(4, 10, name='QRPercentileNorm'),
-            Integer(4, 10, name='QRPercentileT2'),
-            Integer(4, 10, name='QRPercentileT1'),
-            Integer(4, 10, name='QRPercentileOrig'),
-            Categorical([-1, 1, 4, 6, 10], name='normBoost'),
-            Categorical([-1, 1, 4, 6, 10], name='t2Boost'),
-            Categorical([-1, 1, 4, 6, 10], name='t1Boost'),
-            Categorical([-1, 1, 4, 6, 10], name='origBoost'),
-            Categorical(['30%,50%,70%,90%', '20%,40%,60%,80%'], name='simThreshold')]
-
+param = [
+    [4, 6, 8, 10], # ngram
+    [6, 7, 8, 9, 10], # minCloneSize (Chaiyong Recommended)
+    [2, 4, 6, 8, 12, 16, 20], # QRPercentileNorm (Chaiyong Recommended)
+    [2, 4, 6, 8, 12, 16, 20], # QRPercentileT2 (Chaiyong Recommended)
+    [2, 4, 6, 8, 12, 16, 20], # QRPercentileT1 (Chaiyong Recommended)
+    [2, 4, 6, 8, 12, 16, 20], # QRPercentileOrig (Chaiyong Recommended)
+    [-1, 1, 4, 10], # normBoost (Siamese article)
+    [-1, 1, 4, 10], # t2Boost (Siamese article)
+    [-1, 1, 4, 10], # t1Boost (Siamese article)
+    [-1, 1, 4, 10], # origBoost (Siamese article)
+    ['20%,40%,60%,80%','30%,50%,70%,90%','50%,60%,70%,80%'], # simThreshold 
+]
 
 combinations = list(product(*param))
 print(len(combinations))

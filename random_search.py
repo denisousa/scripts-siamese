@@ -32,19 +32,33 @@ def generate_unique_combination(all_combinations):
             return combination
 
 def generate_combination():
-    boost = [-1, 1, 4, 6, 10]
-    simthreshold = ['30%,50%,70%,90%', '20%,40%,60%,80%']
-    combination=[random.randint(4, 8), # ngram
-                random.randint(6, 10), # minCloneSize
-                random.randint(4, 10), # QRPercentileNorm
-                random.randint(4, 10), # QRPercentileT2
-                random.randint(4, 10), # QRPercentileT1
-                random.randint(4, 10), # QRPercentileOrig
-                random.choice([-1, 1, 4, 6, 10]), # normBoost
-                random.choice([-1, 1, 4, 6, 10]), # t2Boost
-                random.choice([-1, 1, 4, 6, 10]), # t1Boost
-                random.choice([-1, 1, 4, 6, 10]), # origBoost
-                random.choice(['30%,50%,70%,90%', '20%,40%,60%,80%'])] # simThreshold 
+    ngram = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+    minclonesize = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    qrpercentile = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    boost = [-1, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    simthreshold = [
+        '10%,20%,30%,40%',
+        '20%,30%,40%,50%',
+        '30%,40%,50%,60%',
+        '40%,50%,60%,70%',
+        '50%,60%,70%,80%',
+        '60%,70%,80%,90%',
+        '10%,30%,40%,50%',
+        '20%,40%,60%,70%',
+        '30%,60%,80%,90%',
+    ]
+
+    combination=[random.choice(ngram), # ngram
+                random.choice(minclonesize), # minCloneSize
+                random.choice(qrpercentile), # QRPercentileNorm
+                random.choice(qrpercentile), # QRPercentileT2
+                random.choice(qrpercentile), # QRPercentileT1
+                random.choice(qrpercentile), # QRPercentileOrig
+                random.choice(boost), # normBoost
+                random.choice(boost), # t2Boost
+                random.choice(boost), # t1Boost
+                random.choice(boost), # origBoost
+                random.choice(simthreshold)] # simThreshold 
 
     return combination
 
@@ -113,7 +127,8 @@ def evaluate_tool(parms):
 def execute_random_search(combinations):
     algorithm = 'random_search'
 
-    grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
+    # grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
+    grid_search_time = timedelta(days=0, hours=3, minutes=10, seconds=49)
     start_total_time = datetime.now()
 
     for i, combination in enumerate(combinations):
@@ -158,5 +173,4 @@ combinations = list(product(*grid_search_params))
 combinations = generate_all_combinations(combinations)
 print(len(combinations))
 
-print("SE QUER EXECUTAR O STACKOVERFLOW FILTERED OU CUT, ALTERE EM: siamese_search.py")
 execute_random_search(combinations)

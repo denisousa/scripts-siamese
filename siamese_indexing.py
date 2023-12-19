@@ -38,6 +38,7 @@ def multiple_execution(combinations):
 def execute_siamese_index_properties(ngram):
     gc.collect()
     os.system('sync')
+    create_one_cluster_elasticserach(ngram)
     stop_cluster_elasticserach(ngram) 
     execute_cluster_elasticserach(ngram)
 
@@ -45,19 +46,21 @@ def execute_siamese_index_properties(ngram):
     n_gram_properties_path = './n-gram-properties'
     elasticsearch_path = '/home/denis/programming/siamese-optmization/elasticsearch-siamese'
     elasticsearch_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}'
+    project_index_path = f'../siamese-optmization/Siamese/my_index/{project}'
+    index_name = f'qualitas_corpus_n_gram_{ngram}'
 
     config = open('index-config.properties', 'r').read()
-    config = config.replace('elasticsearchLoc=elasticsearchLoc', f'elasticsearchLoc={elasticsearch_path}')
-    config = config.replace('cluster=cluster', f'cluster=stackoverflow')
-    config = config.replace('t1NgramSize=4', f't1NgramSize={ngram}')
-    config = config.replace('t2NgramSize=4', f't2NgramSize={ngram}')
-    config = config.replace('ngramSize=4', f'ngramSize={ngram}')
-    index_name = f'qualitas_corpus_n_gram_{ngram}'
-    config = config.replace('index=qualitas_corpus_clean', f'index={index_name}')
+    config = config.replace('elasticsearchLoc=', f'elasticsearchLoc={elasticsearch_path}')
+    config = config.replace('cluster=', f'cluster=stackoverflow')
+    config = config.replace('index=', f'index={index_name}')
+    config = config.replace('t1NgramSize=', f't1NgramSize={ngram}')
+    config = config.replace('t2NgramSize=', f't2NgramSize={ngram}')
+    config = config.replace('ngramSize=', f'ngramSize={ngram}')
+    config = config.replace('inputFolder=', f'inputFolder={project_index_path}')
     print(f'CONFIG NAME: {index_name} \n\n')
     new_config = f'{n_gram_properties_path}/n_gram_{ngram}.properties'
     open(new_config, 'w').write(config)
-    command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ../siamese-optmization/Siamese/my_index/{project} -cf {new_config}'
+    command = f'java -jar siamese-0.0.6-SNAPSHOT.jar -cf {new_config}'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()
 
@@ -76,10 +79,9 @@ def execute_siamese_index(siamese_jar_path, project_path, properties_path):
 
 #print('FOR THIS SCRIPT WORS YOU NEED RUN kill_all_elasticserach.py')
 #create_one_cluster_elasticserach(24,9220)
-clusters = range(5,24)
+clusters = range(5,25)
 for i in clusters:
-    execute_siamese_index_properties(8)
-    break
+    execute_siamese_index_properties(i)
 #single_execution()
 #multiple_execution()
 

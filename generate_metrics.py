@@ -45,7 +45,7 @@ def precision_at_k(recommended_items, relevant_items, k):
         if check:
             recommended_and_relevant.append(item)
        
-    return round(len(recommended_and_relevant) / k, 2)
+    return len(recommended_and_relevant) / k
 
 def recall_at_k(recommended_items, relevant_items, k):
     recommended_items = recommended_items[:k]
@@ -62,15 +62,25 @@ def recall_at_k(recommended_items, relevant_items, k):
             recommended_and_relevant.append(item)
             hit.append(index+1)
     
-    return round(len(recommended_and_relevant) / len(relevant_items), 2)
+    return len(recommended_and_relevant) / len(relevant_items)
 
 def apk(recommended_items, relevant_items, k):
     precisions = [precision_at_k(recommended_items, relevant_items, i) for i in range(1, k+1)]
         
-    return round(sum(precisions) / k, 2)
+    return sum(precisions) / k
+
+def overall_precision(siamese_hit_attempts, oracle_clones, k):
+    all_precision_at_k = []
+    for i in range(1, k+1):
+        if len(oracle_clones) < i:
+            break
+
+        precision = precision_at_k(siamese_hit_attempts, oracle_clones, i)
+        all_precision_at_k.append(precision)
+    return sum(all_precision_at_k)/len(all_precision_at_k)
 
 def mapk(recommended_items, relevant_items, k):
-    return round(np.mean([apk(a,p,k) for a,p in zip(recommended_items, relevant_items)]),2)
+    return np.mean([apk(a,p,k) for a,p in zip(recommended_items, relevant_items)])
 
 def find_float_numbers(input_string):
     float_numbers = re.findall(r'\b\d+\.\d+\b', input_string)
@@ -256,13 +266,69 @@ def add_precision_recall_apk(rr, siamese_hit_attempts, oracle_clones, i):
     rr[f'APK@{i}'] = apk(siamese_hit_attempts, oracle_clones, i)
     return rr
 
+def add_all_precision_at_k(siamese_hit_attempts, oracle_clones, k):
+    all_precision_at_k = []
+    for i in range(1, k+1):
+        if len(oracle_clones) < i:
+            break
+
+        precision = {f'Precision@{i}': precision_at_k(siamese_hit_attempts, oracle_clones, i)}
+        all_precision_at_k.append(precision)
+    return all_precision_at_k
+
+def add_all_recall_at_k(siamese_hit_attempts, oracle_clones, k):
+    all_recall_at_k = []
+    for i in range(1, k+1):
+        if len(oracle_clones) < i:
+            break
+        
+        recall = {f'Recall@{i}': recall_at_k(siamese_hit_attempts, oracle_clones, i)}
+        all_recall_at_k.append(recall)
+    return all_recall_at_k
+
 def remove_precision_recall_apk(rr, i):
     del rr[f'Precision@{i}']
     del rr[f'Recall@{i}']
     del rr[f'APK@{i}']
     return rr
 
-def calculate_metrics(result_siamese_csv, df_siamese, df_clones):
+def compute_query(index, unique_so_clone, reciprocal_rank, oracle_clones, siamese_hit_attempts):
+    return {
+            'clone_SO': f'{unique_so_clone}',
+            'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
+            'siamese_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in siamese_hit_attempts],
+            'relevants_clones_number': len(oracle_clones),
+            'attempts_number' : len(siamese_hit_attempts),
+            'hit_number' : index + 1,
+            'k_hits_correct': get_k_hits(siamese_hit_attempts, oracle_clones),
+            'RR (Reciprocal Rank)': reciprocal_rank,
+            'Precision@K': add_all_precision_at_k(siamese_hit_attempts, oracle_clones, len(siamese_hit_attempts)),
+            'Recall@K': add_all_recall_at_k(siamese_hit_attempts, oracle_clones, len(siamese_hit_attempts)),
+            'OP (Overall Precision)': overall_precision(siamese_hit_attempts, oracle_clones, len(siamese_hit_attempts)),
+            }
+
+def compute_query_not_predict(oracle_clone, oracle_clones):
+    return {
+            'clone_SO': f'{oracle_clone}',
+            'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
+            'siamese_clones_QA': [],
+            'relevants_clones_number': len(oracle_clones),
+            'attempts_number' : 0,
+            'hit_number' : None,
+            'RR (Reciprocal Rank)': 0,
+            'Precision@K': [],
+            'Recall@K': [],
+            }
+
+def add_attempts(all_reciprocal_rank, siamese_hit_attempts):
+    try:
+        attempts = len(siamese_hit_attempts)
+        all_reciprocal_rank['siamese_status'][f'number_attempts_{attempts}'] += 1
+    except:
+        all_reciprocal_rank['siamese_status'][f'number_attempts_{attempts}'] = 1
+    return all_reciprocal_rank
+
+def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
     # File1 -> Stackoverflow 
     # File2 -> Qualitas Corpus
 
@@ -282,6 +348,8 @@ def calculate_metrics(result_siamese_csv, df_siamese, df_clones):
             'not_predict': not_predicted_clones.shape[0],
         },
         'parameters': get_parameters_in_dict(result_siamese_csv),
+        'predict_results': [],
+        'not_predict_results': []
     }
 
     number_relevants_clones = get_list_items_relevants(df_clones, clones_in_oracle, not_predicted_clones)
@@ -294,123 +362,59 @@ def calculate_metrics(result_siamese_csv, df_siamese, df_clones):
         siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
 
         for index, siamese_hit in enumerate(siamese_hit_attempts):
-
             clone_is_correct, _ = check_clone_is_correct(oracle_clones, siamese_hit)
             if clone_is_correct:
                 reciprocal_rank += 1/(index+1)
                 total_reciprocal_rank += 1/(index+1)
-                rr = {
-                    'clone_SO': f'{unique_so_clone}',
-                    'reciprocal_rank': reciprocal_rank,
-                    'hit_number' : index + 1,
-                    'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
-                    'siamese_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in siamese_hit_attempts],
-                    'relevants_clones_number': len(oracle_clones),
-                    'attempts_number' : len(siamese_hit_attempts)
-                    }
+                rr = compute_query(index, unique_so_clone, reciprocal_rank, oracle_clones, siamese_hit_attempts)
+                all_reciprocal_rank['predict_results'].append(rr)
                 break
             
             if (index + 1) == len(siamese_hit_attempts):
                 reciprocal_rank += 0
                 total_reciprocal_rank += 0
-                rr = {
-                    'clone_SO': f'{unique_so_clone}',
-                    'reciprocal_rank': 0,
-                    'hit_number' : 0,
-                    'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
-                    'siamese_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in siamese_hit_attempts],
-                    'relevants_clones_number': len(oracle_clones),
-                    'attempts_number' : len(siamese_hit_attempts)
-                    }
+                rr = compute_query(index, unique_so_clone, reciprocal_rank, oracle_clones, siamese_hit_attempts)
+                all_reciprocal_rank['predict_results'].append(rr)
                 break
 
+        add_attempts(all_reciprocal_rank, siamese_hit_attempts)
 
-        rr['k_hits_correct'] = get_k_hits(siamese_hit_attempts, oracle_clones)
-
-        for i in number_relevants_clones:
-            if i <= len(oracle_clones):
-                new_rr = add_precision_recall_apk(rr, siamese_hit_attempts, oracle_clones, i)
-                copy_rr = copy.deepcopy(new_rr)
-                remove_precision_recall_apk(rr, i)
-                try:
-                    all_reciprocal_rank[f'results_k@{i}'].append(copy_rr)
-                except:
-                    all_reciprocal_rank[f'results_k@{i}'] = []
-                    all_reciprocal_rank[f'results_k@{i}'].append(copy_rr)
-
-        try:
-            attempts = len(siamese_hit_attempts)
-            all_reciprocal_rank['siamese_status'][f'number_attempts_{attempts}'] += 1
-        except:
-            all_reciprocal_rank['siamese_status'][f'number_attempts_{attempts}'] = 1
 
     for _, row in not_predicted_clones.iterrows():
         oracle_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
         oracle_clones = get_qualitas_clones_in_dataframe_by_so_clone(row, df_clones)
         
-        rr = {
-            'clone_SO': f'{oracle_clone}',
-            'reciprocal_rank': 0,
-            'hit_number' : None,
-            'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
-            'siamese_clones_QA': [],
-            'relevants_clones_number': len(oracle_clones),
-            'attempts_number' : 0
-            }
-
-        for i in number_relevants_clones:
-            if i <= len(oracle_clones):
-                new_rr = add_precision_recall_apk(rr, siamese_hit_attempts, oracle_clones, i)
-                copy_rr = copy.deepcopy(new_rr)
-                remove_precision_recall_apk(rr, i)
-                try:
-                    all_reciprocal_rank[f'results_k@{i}'].append(copy_rr)
-                except:
-                    all_reciprocal_rank[f'results_k@{i}'] = []
-                    all_reciprocal_rank[f'results_k@{i}'].append(copy_rr)
-        
+        rr = compute_query_not_predict(oracle_clone, oracle_clones)
+        all_reciprocal_rank['not_predict_results'].append(rr)
             
-    for k in number_relevants_clones:
-        calculate_hit_number(all_reciprocal_rank, k)
-
-
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
     
+    all_op = [result['OP (Overall Precision)'] for result in all_reciprocal_rank['predict_results']]
+    mean_overall_precision = sum(all_op)/len(all_op)
     mrr = total_reciprocal_rank/num_queries
-    all_reciprocal_rank[f'mrr'] = '{:.3}'.format(mrr)
-
-    for k in number_relevants_clones:
-        mapk_result = 0
-        if f'results_k@{k}' in all_reciprocal_rank: 
-            for rr in all_reciprocal_rank[f'results_k@{k}']:
-                mapk_result += rr[f'APK@{k}']
-
-            all_reciprocal_rank[f'status@{k}']['queries@k'] = len(all_reciprocal_rank[f'results_k@{k}'])
-            
-            if mapk_result == 0:
-                all_reciprocal_rank[f'MAP@{k}'] = mapk_result
-                break 
-
-            all_reciprocal_rank[f'MAP@{k}'] = '{:.3}'.format(mapk_result/len(all_reciprocal_rank[f'results_k@{k}']))
-            
-
-            if 'hit_None' in all_reciprocal_rank[f'status@{k}']:
-                number_hit_none = all_reciprocal_rank[f'status@{k}']['hit_None']
-                precision_queries = len(all_reciprocal_rank[f'results_k@{k}']) - number_hit_none 
-                
-                all_reciprocal_rank[f'status@{k}']['queries@k'] = precision_queries
-                all_reciprocal_rank[f'MAP@{k}'] =  '{:.3}'.format(mapk_result/precision_queries)
-                 
+    all_reciprocal_rank[f'MRR (Mean Reciprocal Rank)'] = mrr
+    all_reciprocal_rank[f'MOP (Mean Overall Precision)'] = mean_overall_precision
+    
+    for i in range(100):
+        mpk = []
+        for query in all_reciprocal_rank['predict_results']:
+            try:
+                mpk.append(query['Precision@K'][i][f'Precision@{i+1}'])
+            except:
+                pass
+        try:
+            mpk_value = sum(mpk)/len(mpk)
+            all_reciprocal_rank[f'MP@{i+1} (Mean Precision at K)'] = {'value': mpk_value, 'len': len(mpk)}
+        except:
+            pass
 
     with open(f'./result_metrics/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
-    return mrr, all_reciprocal_rank
+    return all_reciprocal_rank
 
 def get_metrics(optimization_algorithms):
     df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
     df_clones = filter_oracle(df_clones)
-    get_problemns_in_oracle(df_clones)
-    open('error_siamese_execution.txt', 'w').write('')
 
     for algorithm in optimization_algorithms:
         directory = f'output_{algorithm}'
@@ -420,9 +424,9 @@ def get_metrics(optimization_algorithms):
 
         all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
+
             mrr_results_by_algorithm = []
 
-            #result_siamese_csv = '_'.join(result_siamese_csv.split('_')[1:])
             print(index, len(results_siamese_csv), algorithm)
 
             if result_siamese_csv == 'README.md':
@@ -430,33 +434,28 @@ def get_metrics(optimization_algorithms):
 
             try:
                 df_siamese = format_siamese_output(directory, result_siamese_csv)
-                mrr_result, all_rr = calculate_metrics(result_siamese_csv, df_siamese, df_clones)
-                mrr_by_siamese_result[result_siamese_csv] = mrr_result 
+                all_rr = calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones)
             except Exception as inst:
                 print(inst)
                 open('error_siamese_execution.txt', 'a').write(f'{result_siamese_csv}\n')
                 print(f'error in {result_siamese_csv}')
                 continue
 
+            mrr_by_siamese_result[result_siamese_csv] = all_rr['MRR (Mean Reciprocal Rank)']
             params_str = result_siamese_csv.replace('.csv', '').split('_')
-            if params_str[0] == 'nS':
-                params = [param for i_,param in enumerate(params_str) if i_ % 2 == 1]
-            else:
-                params = [param for i_,param in enumerate(params_str) if i_ % 2 == 0][1:]
+            params = [param for i_,param in enumerate(params_str) if i_ % 2 == 0][1:]
             
             result_siamese_csv = '_'.join(result_siamese_csv.split('_')[1:])
             mrr_result_row = [index+1,
                    result_siamese_csv,
                    *params,
                    all_result_time[index],
-                   '{:.3}'.format(mrr_result),
+                   all_rr['MRR (Mean Reciprocal Rank)'],
+                   all_rr['MOP (Mean Overall Precision)'],
+                   all_rr['MP@1 (Mean Precision at K)']['value'],
+                   all_rr['MP@1 (Mean Precision at K)']['len'],
+                   # len(all_rr['predict_results'])
                    ] 
-
-            for k in k_s:
-                try:
-                    mrr_result_row.append(all_rr[f'MAP@{k}'])
-                except:
-                    mrr_result_row.append(0)
 
             mrr_results_by_algorithm.append(mrr_result_row)
 
@@ -469,18 +468,10 @@ def get_metrics(optimization_algorithms):
             if index != 0:
                 df_final_metric = pd.read_excel(f'{algorithm}_result.xlsx')
                 df_metric = pd.concat([df_final_metric, df_metric])
-                try:
-                    df_metric.to_excel(f'{algorithm}_result.xlsx', index=False)
-                    del df_metric
-                except:
-                    print(index)
+                df_metric.to_excel(f'{algorithm}_result.xlsx', index=False)
+                del df_metric
+                del mrr_results_by_algorithm
 
-            del mrr_results_by_algorithm
-
-        df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
-        df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
-        
-    return df_metric
 
 columns = [
         'execution',
@@ -497,14 +488,13 @@ columns = [
         'origBoost',
         'simThreshold',
         'time',
-        'mrr',
+        'MRR',
+        'MOP',
+        'MP@1_VALUE',
+        'MP@1_LEN',
         ]
 
-k_s = [1,2,3,4,5,6,7,8,24,26]
-for k in k_s:
-    columns.append(f'MAP@{k}')
 
-results = {}
 df_result = pd.DataFrame()
-optimization_algorithms = ['grid_search','random_search','bayesian_search']
+optimization_algorithms = ['bayesian_search']
 get_metrics(optimization_algorithms)
