@@ -1,6 +1,7 @@
 from siamese_search import execute_siamese_search
 from datetime import datetime
 from itertools import product
+import yaml
 import re
 
 
@@ -89,33 +90,18 @@ def execute_grid_search(combinations):
     print(f"Total execution time: {total_execution_time}")
     open(f'{algorithm}_result_time.txt', 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
-
 param = [
-    [6, 4, 8], # ngram
-    [6, 7, 8, 9, 10], # minCloneSize
-    [4, 5, 6, 7, 8, 9, 10], # QRPercentileNorm
-    [4, 5, 6, 7, 8, 9, 10], # QRPercentileT2
-    [4, 5, 6, 7, 8, 9, 10], # QRPercentileT1
-    [4, 5, 6, 7, 8, 9, 10], # QRPercentileOrig
-    [-1, 1, 4, 6, 10], # normBoost
-    [-1, 1, 4, 6, 10], # t2Boost
-    [-1, 1, 4, 6, 10], # t1Boost
-    [-1, 1, 4, 6, 10], # origBoost
-    ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
-]
-
-param = [
-    [4, 6, 8, 10], # ngram
-    [6, 7, 8, 9, 10], # minCloneSize (Chaiyong Recommended)
-    [2, 4, 6, 8, 12, 16, 20], # QRPercentileNorm (Chaiyong Recommended)
-    [2, 4, 6, 8, 12, 16, 20], # QRPercentileT2 (Chaiyong Recommended)
-    [2, 4, 6, 8, 12, 16, 20], # QRPercentileT1 (Chaiyong Recommended)
-    [2, 4, 6, 8, 12, 16, 20], # QRPercentileOrig (Chaiyong Recommended)
-    [-1, 1, 4, 10], # normBoost (Siamese article)
-    [-1, 1, 4, 10], # t2Boost (Siamese article)
-    [-1, 1, 4, 10], # t1Boost (Siamese article)
-    [-1, 1, 4, 10], # origBoost (Siamese article)
-    ['20%,40%,60%,80%','30%,50%,70%,90%','50%,60%,70%,80%'], # simThreshold 
+    [4, 6, 8], # ngram
+    [6, 10], # minCloneSize
+    [8, 10], # QRPercentileNorm
+    [8, 10], # QRPercentileT2
+    [8, 10], # QRPercentileT1
+    [8, 10], # QRPercentileOrig
+    [-1, 10], # normBoost
+    [-1, 10], # t2Boost
+    [-1, 10], # t1Boost
+    [-1, 10], # origBoost
+    ['20%,40%,60%,80%', '30%,50%,70%,90%'], # simThreshold 
 ]
 
 combinations = list(product(*param))

@@ -1,8 +1,9 @@
 from siamese_search import execute_siamese_search
 from datetime import datetime, timedelta
 from itertools import product
-import re
 import random
+import yaml
+import re
 
 def remove_duplicates(original_list):
     tuple_list = [tuple(sublist) for sublist in original_list]
@@ -32,33 +33,17 @@ def generate_unique_combination(all_combinations):
             return combination
 
 def generate_combination():
-    ngram = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
-    minclonesize = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-    qrpercentile = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-    boost = [-1, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-    simthreshold = [
-        '10%,20%,30%,40%',
-        '20%,30%,40%,50%',
-        '30%,40%,50%,60%',
-        '40%,50%,60%,70%',
-        '50%,60%,70%,80%',
-        '60%,70%,80%,90%',
-        '10%,30%,40%,50%',
-        '20%,40%,60%,70%',
-        '30%,60%,80%,90%',
-    ]
-
-    combination=[random.choice(ngram), # ngram
-                random.choice(minclonesize), # minCloneSize
-                random.choice(qrpercentile), # QRPercentileNorm
-                random.choice(qrpercentile), # QRPercentileT2
-                random.choice(qrpercentile), # QRPercentileT1
-                random.choice(qrpercentile), # QRPercentileOrig
-                random.choice(boost), # normBoost
-                random.choice(boost), # t2Boost
-                random.choice(boost), # t1Boost
-                random.choice(boost), # origBoost
-                random.choice(simthreshold)] # simThreshold 
+    combination=[random.choice(param['ngram']),
+            random.choice(param['minCloneSize']),
+            random.choice(param['QRPercentileNorm']),
+            random.choice(param['QRPercentileT2']),
+            random.choice(param['QRPercentileT1']),
+            random.choice(param['QRPercentileOrig']),
+            random.choice(param['normBoost']),
+            random.choice(param['t2Boost']),
+            random.choice(param['t1Boost']),
+            random.choice(param['origBoost']),
+            random.choice(param['simThreshold'])]
 
     return combination
 
@@ -154,22 +139,13 @@ def execute_random_search(combinations):
     open(f'{algorithm}_result_time.txt', 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 
-grid_search_params = [
-    [6, 4, 8], # ngram
-    [6, 10], # minCloneSize
-    [8, 10], # QRPercentileNorm
-    [8, 10], # QRPercentileT2
-    [8, 10], # QRPercentileT1
-    [8, 10], # QRPercentileOrig
-    [-1, 10], # normBoost
-    [-1, 10], # t2Boost
-    [-1, 10], # t1Boost
-    [-1, 10], # origBoost
-    ['30%,50%,70%,90%','20%,40%,60%,80%'], # simThreshold 
-]
+with open('parameters_grid_search.yml', 'r') as file:
+    grid_search_params = list(yaml.safe_load(file).values())
+
+with open('parameters.yml', 'r') as file:
+    param = yaml.safe_load(file)
 
 combinations = list(product(*grid_search_params))
-
 combinations = generate_all_combinations(combinations)
 print(len(combinations))
 

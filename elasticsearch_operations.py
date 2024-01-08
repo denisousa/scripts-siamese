@@ -2,6 +2,28 @@ import re
 import os
 import subprocess
 from time import sleep
+from dotenv import load_dotenv
+load_dotenv()
+import requests
+
+def put_template(ngram):
+    port = 9000 + ngram
+    elasticsearch_url = f"http://http://localhost:{port}"
+
+    index_name = os.getenv('INDEX_NAME')
+    index_name = f'{index_name}_n_gram_{ngram}'
+
+    create_index_endpoint = f"{elasticsearch_url}/{index_name}"
+
+    response = requests.put(create_index_endpoint)
+
+    if response.status_code == 200:
+        print(f"Index '{index_name}' created successfully.")
+    elif response.status_code == 400:
+        print(f"Index creation failed. Index '{index_name}' may already exist.")
+    else:
+        print(f"Failed to create index '{index_name}'. Status code: {response.status_code}, Response: {response.text}")
+
 
 def get_ngram_by_port():
     ngram_by_port = {}
@@ -11,11 +33,22 @@ def get_ngram_by_port():
 
 def create_one_cluster_elasticserach(ngram):
     port = 9000 + ngram
-    elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
+    elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
+
+    if not os.path.exists(elasticsearch_path):
+        os.makedirs(elasticsearch_path)
+
     command_delete = f'rm -rf {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
     command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
+
+    template_content = open('elasticsearch_template_config.txt', 'r').read()
+    
+    index_name = os.getenv('INDEX_NAME')
+    template_name = os.getenv('ELASTICSEARCH_TEMPLATE')
+    template_content = template_content.replace('TEMPLATE', template_name).replace('INDEX', index_name)
+    # elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%\n{template_content}'
     elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%'
 
     os.system(command_delete)
@@ -67,7 +100,7 @@ def create_clusters_elasticserach():
         print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram_i}\n')
 
 def execute_cluster_elasticserach(ngram):
-    elasticsearch_path = '../siamese-optmization/elasticsearch-siamese'
+    elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
     command_execute = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/bin/elasticsearch -d'
     print(f'EXECUTING elasticsearch-ngram-{ngram}')
     process = subprocess.Popen(command_execute, shell=True, stdout=subprocess.PIPE)

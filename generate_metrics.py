@@ -2,6 +2,7 @@ import pandas as pd
 from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
 from parameters_operations import get_parameters_in_dict
+from files_operations import most_recent_file
 import copy
 import json
 import os
@@ -413,7 +414,28 @@ def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
     return all_reciprocal_rank
 
 def get_metrics(optimization_algorithms):
-    df_clones = pd.read_csv('NEW_clones_only_QS_EX_UD.csv')
+    columns = [
+        'execution',
+        'filename',
+        'ngramSize',
+        'cloneSize',
+        'QRPercentileNorm',
+        'QRPercentileT2',
+        'QRPercentileT1',
+        'QRPercentileOrig',
+        'normBoost',
+        'T2Boost',
+        'T1Boost',
+        'origBoost',
+        'simThreshold',
+        'time',
+        'MRR',
+        'MOP',
+        'MP@1_VALUE',
+        'MP@1_LEN',
+        ]
+
+    df_clones = pd.read_csv('clones_only_QS_EX_UD_NEW.csv')
     df_clones = filter_oracle(df_clones)
 
     for algorithm in optimization_algorithms:
@@ -422,7 +444,9 @@ def get_metrics(optimization_algorithms):
 
         mrr_by_siamese_result = {}
 
-        all_result_time = find_lines_with_specific_text(f'./{algorithm}_result_time.txt', 'Runtime:')
+        time_path = f'./time_record/{algorithm}'
+        filename, text = most_recent_file(time_path)
+        all_result_time = find_lines_with_specific_text(f'{time_path}/{filename}', 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
 
             mrr_results_by_algorithm = []
@@ -472,29 +496,3 @@ def get_metrics(optimization_algorithms):
                 del df_metric
                 del mrr_results_by_algorithm
 
-
-columns = [
-        'execution',
-        'filename',
-        'ngramSize',
-        'cloneSize',
-        'QRPercentileNorm',
-        'QRPercentileT2',
-        'QRPercentileT1',
-        'QRPercentileOrig',
-        'normBoost',
-        'T2Boost',
-        'T1Boost',
-        'origBoost',
-        'simThreshold',
-        'time',
-        'MRR',
-        'MOP',
-        'MP@1_VALUE',
-        'MP@1_LEN',
-        ]
-
-
-df_result = pd.DataFrame()
-optimization_algorithms = ['bayesian_search']
-get_metrics(optimization_algorithms)

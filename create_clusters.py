@@ -1,3 +1,0 @@
-from elasticsearch_operations import create_clusters_elasticserach
-
-create_clusters_elasticserach()

@@ -2,6 +2,8 @@ import pandas as pd
 from pprint import pprint
 import random
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def remove_absolute_path(path):
@@ -44,11 +46,6 @@ def show_clone_by_index(df, index):
     print('\n\n')
     pprint(path2)
 
-def show_clone_between(df_siamese_clones, start, end):
-    # Incomplete
-    for index, row in df.iterrows():
-        pass
-    
 def execute_search_siamese(project):
     os.system(f'cd Siamese-main && java -jar siamese-0.0.6-SNAPSHOT.jar -c search -i ./my_index/{project}/ -o ./output -cf config.properties')
 
@@ -58,16 +55,22 @@ def execute_index_siamese(project, config_properties):
 def get_recall_precision_f1_score(X, Y):
     return random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
 
-def remove_first_backslash(path):
-    if 'cut_stackoverflow_filtered/' in path:
-        path = path.replace('cut_stackoverflow_filtered/','')
-    
-    if 'qualitas_corpus_clean/' in path:
-        path = path.replace('qualitas_corpus_clean/','')
+def get_path_from_project_to_search(path):
+    projects_path = os.getenv('PROJECT_TO_SEARCH')
 
-    if path[0] == '/':
-        return path[1:]
-    return path
+    if './' in projects_path:
+        projects_path = projects_path.replace('./', '')
+    
+    return path.split(projects_path)[-1][1:]
+
+
+def get_path_from_project_to_index(path):
+    projects_path = os.getenv('PROJECT_TO_INDEX')
+
+    if './' in projects_path:
+        projects_path = projects_path.replace('./', '')
+    
+    return path.split(projects_path)[-1][1:]
 
 
 def format_siamese_output(output_path, siamese_output_name):
@@ -79,8 +82,8 @@ def format_siamese_output(output_path, siamese_output_name):
         [siamese_clones.append(format_clones(search_clone, clone)) for clone in indexed_clones]
 
     df_siamese_clones = pd.DataFrame(data=siamese_clones)
-    df_siamese_clones["file1"] = df_siamese_clones["file1"].apply(remove_first_backslash)
-    df_siamese_clones["file2"] = df_siamese_clones["file2"].apply(remove_first_backslash)
+    df_siamese_clones["file1"] = df_siamese_clones["file1"].apply(get_path_from_project_to_search)
+    df_siamese_clones["file2"] = df_siamese_clones["file2"].apply(get_path_from_project_to_index)
     # df_siamese_clones.to_csv(f'formatted_{siamese_output_name}.csv', encoding='utf-8', index=False)
     return df_siamese_clones
     # show_clone_by_index(df_siamese_clones, 0)
