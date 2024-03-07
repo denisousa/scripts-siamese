@@ -58,10 +58,7 @@ def get_recall_precision_f1_score(X, Y):
 def get_path_from_project_to_search(path):
     projects_path = os.getenv('PROJECT_TO_SEARCH')
 
-    if './' in projects_path:
-        projects_path = projects_path.replace('./', '')
-    
-    return path.split(projects_path)[-1][1:]
+    return path.split('/')[-1]
 
 
 def get_path_from_project_to_index(path):
@@ -69,8 +66,10 @@ def get_path_from_project_to_index(path):
 
     if './' in projects_path:
         projects_path = projects_path.replace('./', '')
+
+    path = path.split('/qualitas_corpus_clean/')[-1]
     
-    return path.split(projects_path)[-1][1:]
+    return path
 
 
 def format_siamese_output(output_path, siamese_output_name):
@@ -84,7 +83,5 @@ def format_siamese_output(output_path, siamese_output_name):
     df_siamese_clones = pd.DataFrame(data=siamese_clones)
     df_siamese_clones["file1"] = df_siamese_clones["file1"].apply(get_path_from_project_to_search)
     df_siamese_clones["file2"] = df_siamese_clones["file2"].apply(get_path_from_project_to_index)
-    # df_siamese_clones.to_csv(f'formatted_{siamese_output_name}.csv', encoding='utf-8', index=False)
     return df_siamese_clones
-    # show_clone_by_index(df_siamese_clones, 0)
 

@@ -107,36 +107,38 @@ def format_dimension(parms):
 def evaluate_tool(parms):
     parms = format_dimension(parms)
     parms['algorithm'] = 'random_search'
+    parms['output_folder'] = f'output_{parms["algorithm"]}/{current_datetime}'
     execute_siamese_search(**parms)
 
 def execute_random_search(combinations):
     algorithm = 'random_search'
 
-    # grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
-    grid_search_time = timedelta(days=0, hours=3, minutes=10, seconds=49)
+    grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
     start_total_time = datetime.now()
 
     for i, combination in enumerate(combinations):
         i += 1
 
-        start_time = datetime.now()
         print(f"\n\nCount {i}")
         print(f"Combination {combination}")
+        
+        start_time = datetime.now()
         evaluate_tool(combination)
-
         end_time = datetime.now()
         exec_time = end_time - start_time
         total_execution_time = end_time - start_total_time
 
+        print(f"Runtime: {exec_time}")
+        result_time_path = f'time_record/{algorithm}/{current_datetime}.txt'
+        open(result_time_path, 'a').write(f'Success execution ')
+        open(result_time_path, 'a').write( f'{combination} \nRuntime: {exec_time}\n\n')
+        
         if grid_search_time < total_execution_time:
             break
 
-        print(f"Runtime: {exec_time}")
-        open(f'{algorithm}_result_time.txt', 'a').write(f'Success execution ')
-        open(f'{algorithm}_result_time.txt', 'a').write( f'{combination} \nRuntime: {exec_time}\n\n')
 
     print(f"Total execution time: {total_execution_time}")
-    open(f'{algorithm}_result_time.txt', 'a').write(f"\nTotal execution time: {total_execution_time}\n")
+    open(result_time_path, 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 
 with open('parameters_grid_search.yml', 'r') as file:
@@ -148,5 +150,6 @@ with open('parameters.yml', 'r') as file:
 combinations = list(product(*grid_search_params))
 combinations = generate_all_combinations(combinations)
 print(len(combinations))
+current_datetime = datetime.now()
 
 execute_random_search(combinations)

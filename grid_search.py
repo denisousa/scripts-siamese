@@ -65,6 +65,7 @@ def format_dimension(parms):
 def evaluate_tool(parms):
     parms = format_dimension(parms)
     parms['algorithm'] = 'grid_search'
+    parms['output_folder'] = f'./output_{parms["algorithm"]}/{current_datetime}'
     execute_siamese_search(**parms)
 
 def execute_grid_search(combinations):
@@ -74,21 +75,22 @@ def execute_grid_search(combinations):
     for i, combination in enumerate(combinations):
         i += 1
 
-        start_time = datetime.now()
         print(f"\n\nCount {i}")
         print(f"Combination {combination}")
-        evaluate_tool(combination)
 
+        start_time = datetime.now()
+        evaluate_tool(combination)
         end_time = datetime.now()
         exec_time = end_time - start_time
 
         print(f"Runtime: {exec_time}")
-        open(f'{algorithm}_result_time.txt', 'a').write(f'Success execution ')
-        open(f'{algorithm}_result_time.txt', 'a').write( f'{combination} \nRuntime: {exec_time}\n\n')
+        result_time_path = f'time_record/{algorithm}/{current_datetime}.txt'
+        open(result_time_path, 'a').write(f'Success execution ')
+        open(result_time_path, 'a').write( f'{combination} \nRuntime: {exec_time}\n\n')
 
     total_execution_time = end_time - start_total_time
     print(f"Total execution time: {total_execution_time}")
-    open(f'{algorithm}_result_time.txt', 'a').write(f"\nTotal execution time: {total_execution_time}\n")
+    open(result_time_path, 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 param = [
     [4, 6, 8], # ngram
@@ -106,6 +108,6 @@ param = [
 
 combinations = list(product(*param))
 print(len(combinations))
+current_datetime = datetime.now()
 
-print("SE QUER EXECUTAR O STACKOVERFLOW FILTERED OU CUT, ALTERE EM: siamese_search.py")
 execute_grid_search(combinations)

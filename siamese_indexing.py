@@ -23,13 +23,18 @@ load_dotenv()
 def execute_siamese_index_properties(ngram):
     gc.collect()
     os.system("sync")
-    create_one_cluster_elasticserach(ngram)
-    stop_cluster_elasticserach(ngram)
-    execute_cluster_elasticserach(ngram)
-    # put_template(ngram)
+
 
     project_index_path = os.getenv("PROJECT_TO_INDEX")
     elasticsearch_path = os.getenv("ELASTICSEARCH_CLUSTERS")
+
+    if os.path.exists(f'{elasticsearch_path}/elasticsearch-ngram-{ngram}'):
+        os.system(f'rm -rf {elasticsearch_path}/elasticsearch-ngram-{ngram}')
+
+    create_one_cluster_elasticserach(ngram)
+    stop_cluster_elasticserach(ngram)
+    execute_cluster_elasticserach(ngram)
+
 
     n_gram_properties_path = "./n-gram-properties"
 
@@ -62,4 +67,6 @@ final_quantity = int(os.getenv("FINAL_CLUSTER_QUANTITY")) + 1
 clusters_range = range(initial_quantity, final_quantity)
 
 for i in clusters_range:
+    i = 19
     execute_siamese_index_properties(i)
+    break

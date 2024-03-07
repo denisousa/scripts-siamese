@@ -1,20 +1,22 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-
 import statistics
 
-metric = 'mrr'
+def round_values(x):
+    return round(x, 4)
+
+metric = 'MRR'
 
 def get_metrics(paths):
     metrics = []
     for file_path in paths:
         df = pd.read_excel(file_path)
-        metrics.append(df[metric].astype(float).tolist())
+        metrics.append(list(map(round_values, df[metric].astype(float).tolist())))
     return metrics
 
-mrr_list = get_metrics(['result_grid_search.xlsx',
-             'result_random_search.xlsx',
-             'result_bayesian_search.xlsx',])
+mrr_list = get_metrics(['grid_search_result.xlsx',
+             'random_search_result.xlsx',
+             'bayesian_search_result.xlsx',])
 
 grid_search_metric = mrr_list[0]
 random_search_metric = mrr_list[1]
@@ -22,9 +24,14 @@ bayesian_search_metric = mrr_list[2]
 
 colors = ['lightblue', 'lightgreen', '#8A2BE2']
 
-fig, axs = plt.subplots(1, 3, figsize=(16, 8))
+results_dict = {'Grid Search': mrr_list[0], 'Random Search': mrr_list[1], 'Bayesian Search': mrr_list[2]}
 
-axs[0].boxplot(grid_search_metric, patch_artist=True, boxprops=dict(facecolor=colors[0]))
+fig, axs = plt.subplots()
+axs.boxplot(results_dict.values())
+axs.set_xticklabels(results_dict.keys())
+
+
+'''axs[0].boxplot(grid_search_metric, patch_artist=True, boxprops=dict(facecolor=colors[0]))
 axs[0].set_title('Grid Search')
 
 axs[1].boxplot(random_search_metric, patch_artist=True, boxprops=dict(facecolor=colors[1]))
@@ -36,9 +43,9 @@ axs[2].set_title('Bayesian Search')
 for ax in axs:
     ax.set_xticklabels([''])
     ax.set_ylabel('MRR')
-    ax.grid(True)
+    ax.grid(True)'''
 
-plt.suptitle('Boxplots for Siamese Results')
+plt.suptitle('Siamese - MRR Results')
 plt.show()
 
 

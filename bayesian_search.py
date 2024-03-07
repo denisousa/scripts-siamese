@@ -9,7 +9,7 @@ from skopt import gp_minimize
 from skopt.space import Categorical
 from skopt.utils import use_named_args
 from siamese_search import execute_siamese_search
-from generate_metrics import calculate_mrr_and_rr
+from generate_metrics import calculate_all_metrics
 from datetime import datetime, timedelta
 from files_operations import most_recent_file
 import yaml
@@ -17,6 +17,10 @@ import sys
 
 with open('parameters.yml', 'r') as file:
     param = yaml.safe_load(file)
+n = []
+
+for k,v in param.items():
+    n.append(len(v) -1) 
 
 dimensions=[Categorical(param['ngram'], name='ngramSize'),
             Categorical(param['minCloneSize'], name='minCloneSize'),
@@ -29,6 +33,18 @@ dimensions=[Categorical(param['ngram'], name='ngramSize'),
             Categorical(param['t1Boost'], name='t1Boost'),
             Categorical(param['origBoost'], name='origBoost'),
             Categorical(param['simThreshold'], name='simThreshold')]
+
+def weighted_average(values, weights):
+    if len(values) != len(weights):
+        raise ValueError("Number of values must be equal to the number of weights.")
+    
+    total = sum(value * weight for value, weight in zip(values, weights))
+    weight_sum = sum(weights)
+    
+    if weight_sum == 0:
+        raise ValueError("Total weight cannot be zero.")
+    
+    return total / weight_sum
 
 @use_named_args(dimensions)
 def evaluate_tool(**parms):
@@ -49,10 +65,14 @@ def evaluate_tool(**parms):
 
     most_recent_siamese_output, _ = most_recent_file(siamese_output_path)
     df_siamese = format_siamese_output(siamese_output_path, most_recent_siamese_output)
-    all_rr = calculate_mrr_and_rr(most_recent_siamese_output, df_siamese, df_clones)
-    mrr = all_rr["MRR (Mean Reciprocal Rank)"]
+    folder_result = f'result_metrics/{algorithm}/{current_datetime}'
+    metrics = calculate_all_metrics(most_recent_siamese_output, df_siamese, df_clones, folder_result)
+    mrr = metrics["MRR (Mean Reciprocal Rank)"]
+    mop = metrics["MOP (Mean Overall Precision)"]
+
+    result = weighted_average([mrr, mop], [0.3, 0.7])
     
-    loss = float(mrr) * -1
+    loss = float(result) * -1
 
     if grid_search_time <= total_execution_time:
         print(f"Total execution time: {total_execution_time}")
@@ -70,7 +90,7 @@ def execute_bayesian_search():
     result = gp_minimize(evaluate_tool,
                          dimensions=dimensions,
                          n_calls=all_combinations,
-                         random_state=42)
+                         random_state=18)
     
     print(f'FINAL RESULT: {result}')
 
@@ -88,16 +108,9 @@ columns_parms = ['cloneSize',
 
 algorithm = 'bayesian_search'
 current_datetime = datetime.now()
-# grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
-grid_search_time = timedelta(days=0, hours=3, minutes=10, seconds=49)
+grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
 start_total_time = datetime.now()
 df_clones = pd.read_csv('clones_only_QS_EX_UD_NEW.csv')
 df_clones = filter_oracle(df_clones)
-
-most_recent_siamese_output = '1_nS_4_cS_8_qrN_16_qrT2_12_qrT1_10_qrO_4_boN_8_boT2_6_boT1_2_boOr_12_simT_10%,20%,30%,40%_ed52e1d8-da1f-4bee-98f4-9c8303a3dd00.csv'
-df_siamese = format_siamese_output('./output_bayesian_search/2023-12-23 16:00:53.483333',
-                                   most_recent_siamese_output)
-all_rr = calculate_mrr_and_rr(most_recent_siamese_output, df_siamese, df_clones)
-
 
 execute_bayesian_search()

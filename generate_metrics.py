@@ -8,6 +8,7 @@ import json
 import os
 import re
 import numpy as np
+import shutil
 
 
 def find_lines_with_specific_text(filename, text):
@@ -73,8 +74,8 @@ def apk(recommended_items, relevant_items, k):
 def overall_precision(siamese_hit_attempts, oracle_clones, k):
     all_precision_at_k = []
     for i in range(1, k+1):
-        if len(oracle_clones) < i:
-            break
+        #if len(oracle_clones) < i:
+        #    break
 
         precision = precision_at_k(siamese_hit_attempts, oracle_clones, i)
         all_precision_at_k.append(precision)
@@ -261,17 +262,11 @@ def get_list_items_relevants(df_clones, clones_in_oracle, not_predicted_clones):
     
     return list(relevants_clones)
 
-def add_precision_recall_apk(rr, siamese_hit_attempts, oracle_clones, i):
-    rr[f'Precision@{i}'] = precision_at_k(siamese_hit_attempts, oracle_clones, i)
-    rr[f'Recall@{i}'] = recall_at_k(siamese_hit_attempts, oracle_clones, i)
-    rr[f'APK@{i}'] = apk(siamese_hit_attempts, oracle_clones, i)
-    return rr
-
 def add_all_precision_at_k(siamese_hit_attempts, oracle_clones, k):
     all_precision_at_k = []
     for i in range(1, k+1):
-        if len(oracle_clones) < i:
-            break
+        #if len(oracle_clones) < i:
+        #    break
 
         precision = {f'Precision@{i}': precision_at_k(siamese_hit_attempts, oracle_clones, i)}
         all_precision_at_k.append(precision)
@@ -287,17 +282,11 @@ def add_all_recall_at_k(siamese_hit_attempts, oracle_clones, k):
         all_recall_at_k.append(recall)
     return all_recall_at_k
 
-def remove_precision_recall_apk(rr, i):
-    del rr[f'Precision@{i}']
-    del rr[f'Recall@{i}']
-    del rr[f'APK@{i}']
-    return rr
-
 def compute_query(index, unique_so_clone, reciprocal_rank, oracle_clones, siamese_hit_attempts):
     return {
             'clone_SO': f'{unique_so_clone}',
-            'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
-            'siamese_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in siamese_hit_attempts],
+            'oracle_clones_QC': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
+            'siamese_clones_QC': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in siamese_hit_attempts],
             'relevants_clones_number': len(oracle_clones),
             'attempts_number' : len(siamese_hit_attempts),
             'hit_number' : index + 1,
@@ -311,8 +300,8 @@ def compute_query(index, unique_so_clone, reciprocal_rank, oracle_clones, siames
 def compute_query_not_predict(oracle_clone, oracle_clones):
     return {
             'clone_SO': f'{oracle_clone}',
-            'oracle_clones_QA': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
-            'siamese_clones_QA': [],
+            'oracle_clones_QC': [f'{clone[0].split("/")[-1]}_{clone[1]}_{clone[2]}' for clone in oracle_clones],
+            'siamese_clones_QC': [],
             'relevants_clones_number': len(oracle_clones),
             'attempts_number' : 0,
             'hit_number' : None,
@@ -329,9 +318,12 @@ def add_attempts(all_reciprocal_rank, siamese_hit_attempts):
         all_reciprocal_rank['siamese_status'][f'number_attempts_{attempts}'] = 1
     return all_reciprocal_rank
 
-def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
+def calculate_all_metrics(result_siamese_csv, df_siamese, df_clones, folder_result):
     # File1 -> Stackoverflow 
     # File2 -> Qualitas Corpus
+
+    if not os.path.exists(folder_result):
+        os.makedirs(folder_result)
 
     total_reciprocal_rank = 0.0
     
@@ -357,7 +349,7 @@ def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
 
     for _, row in clones_in_oracle.iterrows():
         reciprocal_rank = 0
-        
+
         unique_so_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
         oracle_clones = get_qualitas_clones_in_dataframe_by_so_clone(row, df_clones)
         siamese_hit_attempts = get_qualitas_clones_in_dataframe_by_so_clone(row, df_siamese)
@@ -370,7 +362,7 @@ def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
                 rr = compute_query(index, unique_so_clone, reciprocal_rank, oracle_clones, siamese_hit_attempts)
                 all_reciprocal_rank['predict_results'].append(rr)
                 break
-            
+
             if (index + 1) == len(siamese_hit_attempts):
                 reciprocal_rank += 0
                 total_reciprocal_rank += 0
@@ -384,18 +376,18 @@ def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
     for _, row in not_predicted_clones.iterrows():
         oracle_clone = f"{row['file1']}_{row['start1']}_{row['end1']}"
         oracle_clones = get_qualitas_clones_in_dataframe_by_so_clone(row, df_clones)
-        
+
         rr = compute_query_not_predict(oracle_clone, oracle_clones)
         all_reciprocal_rank['not_predict_results'].append(rr)
-            
+  
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
-    
+
     all_op = [result['OP (Overall Precision)'] for result in all_reciprocal_rank['predict_results']]
     mean_overall_precision = sum(all_op)/len(all_op)
     mrr = total_reciprocal_rank/num_queries
     all_reciprocal_rank[f'MRR (Mean Reciprocal Rank)'] = mrr
     all_reciprocal_rank[f'MOP (Mean Overall Precision)'] = mean_overall_precision
-    
+
     for i in range(100):
         mpk = []
         for query in all_reciprocal_rank['predict_results']:
@@ -409,11 +401,23 @@ def calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones):
         except:
             pass
 
-    with open(f'./result_metrics/{result_siamese_csv}.json', "w") as json_file:
+    with open(f'{folder_result}/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
     return all_reciprocal_rank
 
-def get_metrics(optimization_algorithms):
+def weighted_average(values, weights):
+    if len(values) != len(weights):
+        raise ValueError("Number of values must be equal to the number of weights.")
+    
+    total = sum(value * weight for value, weight in zip(values, weights))
+    weight_sum = sum(weights)
+    
+    if weight_sum == 0:
+        raise ValueError("Total weight cannot be zero.")
+    
+    return total / weight_sum
+
+def get_metrics(optimization_algorithms, temp):
     columns = [
         'execution',
         'filename',
@@ -428,7 +432,8 @@ def get_metrics(optimization_algorithms):
         'T1Boost',
         'origBoost',
         'simThreshold',
-        'time',
+        # 'time',
+        'WA(MRR,MOP)',
         'MRR',
         'MOP',
         'MP@1_VALUE',
@@ -438,15 +443,22 @@ def get_metrics(optimization_algorithms):
     df_clones = pd.read_csv('clones_only_QS_EX_UD_NEW.csv')
     df_clones = filter_oracle(df_clones)
 
-    for algorithm in optimization_algorithms:
-        directory = f'output_{algorithm}'
-        results_siamese_csv = get_files_in_folder(directory)
+    for algorithm, filename_temp in zip(optimization_algorithms, temp):
+        if os.path.exists(f'result_metrics/{algorithm}/{filename_temp}'):
+            shutil.rmtree(f'result_metrics/{algorithm}/{filename_temp}')
+        
+        if os.path.exists(f'{algorithm}_result.xlsx'):
+            os.remove(f'{algorithm}_result.xlsx')
 
+        os.mkdir(f'result_metrics/{algorithm}/{filename_temp}')
+
+        directory = f'output_{algorithm}/{filename_temp}'
+        folder_result = f'result_metrics/{algorithm}/{filename_temp}'
+        results_siamese_csv = get_files_in_folder(directory)
         mrr_by_siamese_result = {}
 
-        time_path = f'./time_record/{algorithm}'
-        filename, text = most_recent_file(time_path)
-        all_result_time = find_lines_with_specific_text(f'{time_path}/{filename}', 'Runtime:')
+        time_path = f'./time_record/{algorithm}/{filename_temp}.txt'
+        all_result_time = find_lines_with_specific_text(time_path, 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
 
             mrr_results_by_algorithm = []
@@ -458,27 +470,30 @@ def get_metrics(optimization_algorithms):
 
             try:
                 df_siamese = format_siamese_output(directory, result_siamese_csv)
-                all_rr = calculate_mrr_and_rr(result_siamese_csv, df_siamese, df_clones)
+                all_metrics = calculate_all_metrics(result_siamese_csv, df_siamese, df_clones, folder_result)
             except Exception as inst:
                 print(inst)
                 open('error_siamese_execution.txt', 'a').write(f'{result_siamese_csv}\n')
                 print(f'error in {result_siamese_csv}')
                 continue
 
-            mrr_by_siamese_result[result_siamese_csv] = all_rr['MRR (Mean Reciprocal Rank)']
+            mrr = all_metrics['MRR (Mean Reciprocal Rank)']
+            mop = all_metrics['MOP (Mean Overall Precision)']
+
+            mrr_by_siamese_result[result_siamese_csv] = mrr
             params_str = result_siamese_csv.replace('.csv', '').split('_')
             params = [param for i_,param in enumerate(params_str) if i_ % 2 == 0][1:]
-            
+
             result_siamese_csv = '_'.join(result_siamese_csv.split('_')[1:])
             mrr_result_row = [index+1,
                    result_siamese_csv,
                    *params,
-                   all_result_time[index],
-                   all_rr['MRR (Mean Reciprocal Rank)'],
-                   all_rr['MOP (Mean Overall Precision)'],
-                   all_rr['MP@1 (Mean Precision at K)']['value'],
-                   all_rr['MP@1 (Mean Precision at K)']['len'],
-                   # len(all_rr['predict_results'])
+                   # all_result_time[index-1],
+                   weighted_average([mrr,mop],[0.5, 0.5]),
+                   mrr,
+                   mop,
+                   all_metrics['MP@1 (Mean Precision at K)']['value'],
+                   all_metrics['MP@1 (Mean Precision at K)']['len'],
                    ] 
 
             mrr_results_by_algorithm.append(mrr_result_row)
