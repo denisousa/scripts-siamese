@@ -67,6 +67,5 @@ final_quantity = int(os.getenv("FINAL_CLUSTER_QUANTITY")) + 1
 clusters_range = range(initial_quantity, final_quantity)
 
 for i in clusters_range:
-    i = 19
     execute_siamese_index_properties(i)
     break
