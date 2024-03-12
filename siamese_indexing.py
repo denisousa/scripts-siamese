@@ -68,4 +68,3 @@ clusters_range = range(initial_quantity, final_quantity)
 
 for i in clusters_range:
     execute_siamese_index_properties(i)
-    break
