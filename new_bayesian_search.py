@@ -15,6 +15,24 @@ from datetime import datetime, timedelta
 from files_operations import most_recent_file
 import yaml
 import sys
+import os
+
+def sort_files_by_creation_time(file_list, folder_path):
+    file_creation_times = [(file, os.path.getctime(file)) for file in file_list]
+    sorted_files = sorted(file_creation_times, key=lambda x: x[1])
+    return [file[0].replace(folder_path, "")[1:] for file in sorted_files]
+
+def calculate_metric_to_bayesian_search(siamese_csv_name, siamese_output_path):
+    df_siamese = format_siamese_output(siamese_output_path, siamese_csv_name)
+    folder_result = f'result_metrics/{algorithm}/{current_datetime}'
+    metrics = calculate_all_metrics(siamese_csv_name, df_siamese, df_clones, folder_result)
+    mrr = metrics["MRR (Mean Reciprocal Rank)"]
+    mop = metrics["MOP (Mean Overall Precision)"]
+
+    result = weighted_average([mrr, mop], [0.7, 0.3])
+    
+    loss = float(result) * -1
+    return loss
 
 with open('parameters.yml', 'r') as file:
     param = yaml.safe_load(file)
@@ -22,6 +40,13 @@ n = []
 
 for k,v in param.items():
     n.append(len(v) -1) 
+
+iterations = 0
+algorithm = 'bayesian_search'
+current_datetime = "2024-03-20 14:32:37.127093"
+folder_path = f"./output_{algorithm}/{current_datetime}"
+files_in_folder = [os.path.join(folder_path, file) for file in os.listdir(folder_path)]
+all_results_previous = sort_files_by_creation_time(files_in_folder, folder_path)
 
 dimensions=[Categorical(param['ngram'], name='ngramSize'),
             Categorical(param['minCloneSize'], name='minCloneSize'),
@@ -49,6 +74,13 @@ def weighted_average(values, weights):
 
 @use_named_args(dimensions)
 def evaluate_tool(**parms):
+    global iterations
+
+    if iterations < 69:
+        loss = calculate_metric_to_bayesian_search(all_results_previous[iterations], folder_path)
+        iterations += 1
+        return loss
+
     parms['algorithm'] = algorithm
     parms['output_folder'] = f'./output_{parms["algorithm"]}/{current_datetime}'
     siamese_output_path = parms['output_folder']
@@ -64,10 +96,7 @@ def evaluate_tool(**parms):
     open(result_time_path, 'a').write(f'Success execution ')
     open(result_time_path, 'a').write( f'{list(parms.values())} \nRuntime: {exec_time}\n\n')
 
-    # siamese_output_path: './output_bayesian_search/2024-03-24 08:50:14.992783'
-    # '1_nS_18_cS_13_qrN_18_qrT2_4_qrT1_16_qrO_14_boN_16_boT2_18_boT1_-1_boOr_16_simT_20%,30%,40%,50%_c4b73430-d249-43af-a849-36027b764dc2.csv'
     most_recent_siamese_output, _ = most_recent_file(siamese_output_path)
-
     df_siamese = format_siamese_output(siamese_output_path, most_recent_siamese_output)
     folder_result = f'result_metrics/{algorithm}/{current_datetime}'
     metrics = calculate_all_metrics(most_recent_siamese_output, df_siamese, df_clones, folder_result)
@@ -110,8 +139,6 @@ columns_parms = ['cloneSize',
         'origBoost',
         'simThreshold']
 
-algorithm = 'bayesian_search'
-current_datetime = datetime.now()
 grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
 start_total_time = datetime.now()
 df_clones = pd.read_csv('clones_only_QS_EX_UD_NEW.csv')

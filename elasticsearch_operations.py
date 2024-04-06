@@ -38,18 +38,20 @@ def create_one_cluster_elasticserach(ngram):
     if not os.path.exists(elasticsearch_path):
         os.makedirs(elasticsearch_path)
 
-    command_delete = f'rm -rf {elasticsearch_path}/elasticsearch-ngram-{ngram}'
+    command_delete = f'trash-put {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
     command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
 
-    template_content = open('elasticsearch_template_config.txt', 'r').read()
+    #template_content = open('elasticsearch_template_config.txt', 'r').read()
     
     index_name = os.getenv('INDEX_NAME')
-    template_name = os.getenv('ELASTICSEARCH_TEMPLATE')
-    template_content = template_content.replace('TEMPLATE', template_name).replace('INDEX', index_name)
+    #template_name = os.getenv('ELASTICSEARCH_TEMPLATE')
+    #template_content = template_content.replace('TEMPLATE', template_name).replace('INDEX', index_name)
     # elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%\n{template_content}'
-    elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%'
+    
+    #elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}-{ngram}\nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%'
+    elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}_n_gram_{ngram}\nhttp.port: {port}'
 
     os.system(command_delete)
     sleep(1)
@@ -99,7 +101,19 @@ def create_clusters_elasticserach():
         open(elasticsearch_in_sh_path, 'w').write(elasticsearch_in_sh_text)
         print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram_i}\n')
 
+def delete_indices_incorrect(ngram):
+    port = 9000 + ngram
+    index_name = os.getenv('INDEX_NAME')
+
+    for i in range(4,25):
+        if i == ngram:
+            continue
+
+        complete_index_name = f'{index_name}_n_gram_{i}'
+        os.system(f'curl -sS -X DELETE "http://localhost:{port}/{complete_index_name}" > /dev/null 2>&1')
+
 def execute_cluster_elasticserach(ngram):
+    #elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
     elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
     command_execute = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/bin/elasticsearch -d'
     print(f'EXECUTING elasticsearch-ngram-{ngram}')
@@ -109,7 +123,7 @@ def execute_cluster_elasticserach(ngram):
 
 def stop_cluster_elasticserach(ngram):
     port = 9000 + ngram
-    command_stop = f'sudo kill $(sudo lsof -t -i :{port})'
+    command_stop = f'sudo fuser -k -n tcp {port}'
     print(f'STOP elasticsearch-ngram-{ngram}')
     process = subprocess.Popen(command_stop, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     process.wait()

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def delete_folder_or_file(filename_path):
-    os.system(f'rm -rf {filename_path}')
+    os.system(f'trash-put {filename_path}')
 
 def unzip_file(zip_file_path, extract_to_path):
     with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
@@ -35,9 +35,9 @@ datasource_list = [
     },
 ]
 
-for datasource in datasource_list:
+'''for datasource in datasource_list:
     download_file_from_google_drive(datasource["file_id"], datasource["filename"])
     unzip_file(datasource["filename"], extract_to_path)
-    delete_folder_or_file(datasource["filename"])
+    delete_folder_or_file(datasource["filename"])'''
 
 download_elasticsearch()

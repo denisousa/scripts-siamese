@@ -18,13 +18,13 @@ def extract_numbers(siamese_csv_name):
 
 def format_dimension(parms):
     return {
-        "cloneSize": parms[0],
-        "ngramSize": parms[1],
-        "qrNorm": parms[2],
-        "normBoost": parms[3],
-        "t2Boost": parms[4],
-        "t1Boost": parms[5],
-        "origBoost": parms[6],
+        "cloneSize": parms[1],
+        "ngramSize": parms[2],
+        "qrNorm": parms[3],
+        "normBoost": parms[4],
+        "t2Boost": parms[5],
+        "t1Boost": parms[6],
+        "origBoost": parms[7],
     }
 
 def get_parameters_in_list(siamese_csv_name):

@@ -4,6 +4,7 @@ from itertools import product
 import yaml
 import re
 
+
 def cofigure_text(text):
     text = text.replace('cloneSize-','')
     text = text.replace('ngramSize-','')
@@ -73,6 +74,9 @@ def execute_grid_search(combinations):
     start_total_time = datetime.now()
     for i, combination in enumerate(combinations):
         i += 1
+        
+        if i <= 943:
+            continue
 
         print(f"\n\nCount {i}")
         print(f"Combination {combination}")
@@ -92,7 +96,7 @@ def execute_grid_search(combinations):
     open(result_time_path, 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 param = [
-    [4], # ngram
+    [4, 6, 8], # ngram
     [6, 10], # minCloneSize
     [8, 10], # QRPercentileNorm
     [8, 10], # QRPercentileT2
@@ -105,22 +109,8 @@ param = [
     ['20%,40%,60%,80%', '30%,50%,70%,90%'], # simThreshold 
 ]
 
-param = [
-    [4], # ngram
-    [6], # minCloneSize
-    [10], # QRPercentileNorm
-    [10], # QRPercentileT2
-    [10], # QRPercentileT1
-    [10], # QRPercentileOrig
-    [4], # normBoost
-    [4], # t2Boost
-    [4], # t1Boost
-    [1], # origBoost
-    ['50%,60%,70%,80%'], # simThreshold 
-]
-
 combinations = list(product(*param))
 print(len(combinations))
-current_datetime = datetime.now()
+current_datetime = '2024-04-01 10:13:13.495266'
 
 execute_grid_search(combinations)

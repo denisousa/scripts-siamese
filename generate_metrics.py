@@ -9,7 +9,11 @@ import os
 import re
 import numpy as np
 import shutil
+import sys
 
+
+def extract_number(s):
+    return int(s.split('_')[0])
 
 def find_lines_with_specific_text(filename, text):
     result = []
@@ -99,8 +103,8 @@ def find_lines_with_runtime(filename):
 def get_files_in_folder(folder_path):
     files = os.listdir(folder_path)
     file_times = [(os.path.join(folder_path, file), os.path.getctime(os.path.join(folder_path, file))) for file in files]
-    sorted_files = sorted(file_times, key=lambda x: x[1])
-    return [file_path.split('/')[-1] for file_path, _ in sorted_files]
+    sorted_files = sorted([file[0].split('/')[-1] for file in file_times], key=extract_number) 
+    return sorted_files
 
 def check_clone_is_correct(oracle_clones_list, siamese_clone):
     siamese_clone = {'file2': siamese_clone[0], 'start2': siamese_clone[1], 'end2': siamese_clone[2]}
@@ -383,23 +387,10 @@ def calculate_all_metrics(result_siamese_csv, df_siamese, df_clones, folder_resu
     result_siamese_csv = result_siamese_csv.replace('.csv', '')
 
     all_op = [result['OP (Overall Precision)'] for result in all_reciprocal_rank['predict_results']]
-    mean_overall_precision = sum(all_op)/len(all_op)
+    mop = sum(all_op)/len(all_op)
     mrr = total_reciprocal_rank/num_queries
     all_reciprocal_rank[f'MRR (Mean Reciprocal Rank)'] = mrr
-    all_reciprocal_rank[f'MOP (Mean Overall Precision)'] = mean_overall_precision
-
-    for i in range(100):
-        mpk = []
-        for query in all_reciprocal_rank['predict_results']:
-            try:
-                mpk.append(query['Precision@K'][i][f'Precision@{i+1}'])
-            except:
-                pass
-        try:
-            mpk_value = sum(mpk)/len(mpk)
-            all_reciprocal_rank[f'MP@{i+1} (Mean Precision at K)'] = {'value': mpk_value, 'len': len(mpk)}
-        except:
-            pass
+    all_reciprocal_rank[f'MOP (Mean Overall Precision)'] = mop
 
     with open(f'{folder_result}/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
@@ -417,6 +408,15 @@ def weighted_average(values, weights):
     
     return total / weight_sum
 
+def validade_time(all_result_time, index):
+    try:
+        time = all_result_time[index-1]
+    except:
+        print("Problem in time")
+        time = None
+    
+    return time
+
 def get_metrics(optimization_algorithms, temp):
     columns = [
         'execution',
@@ -432,12 +432,14 @@ def get_metrics(optimization_algorithms, temp):
         'T1Boost',
         'origBoost',
         'simThreshold',
-        # 'time',
-        'WA(MRR,MOP)',
+        'time',
+        'WA(MRR,MOP) - (0.5,0.5)',
+        'WA(MRR,MOP) - (0.7,0.3)',
+        'WA(MRR,MOP) - (0.3,0.7)',
         'MRR',
         'MOP',
-        'MP@1_VALUE',
-        'MP@1_LEN',
+        #'MP@1_VALUE',
+        #'MP@1_LEN',
         ]
 
     df_clones = pd.read_csv('clones_only_QS_EX_UD_NEW.csv')
@@ -450,6 +452,9 @@ def get_metrics(optimization_algorithms, temp):
         if os.path.exists(f'{algorithm}_result.xlsx'):
             os.remove(f'{algorithm}_result.xlsx')
 
+        if not os.path.exists('results_excel'):
+            os.mkdir('results_excel')
+
         os.mkdir(f'result_metrics/{algorithm}/{filename_temp}')
 
         directory = f'output_{algorithm}/{filename_temp}'
@@ -460,7 +465,6 @@ def get_metrics(optimization_algorithms, temp):
         time_path = f'./time_record/{algorithm}/{filename_temp}.txt'
         all_result_time = find_lines_with_specific_text(time_path, 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
-
             mrr_results_by_algorithm = []
 
             print(index, len(results_siamese_csv), algorithm)
@@ -475,7 +479,7 @@ def get_metrics(optimization_algorithms, temp):
                 print(inst)
                 open('error_siamese_execution.txt', 'a').write(f'{result_siamese_csv}\n')
                 print(f'error in {result_siamese_csv}')
-                continue
+                sys.exit()
 
             mrr = all_metrics['MRR (Mean Reciprocal Rank)']
             mop = all_metrics['MOP (Mean Overall Precision)']
@@ -488,12 +492,14 @@ def get_metrics(optimization_algorithms, temp):
             mrr_result_row = [index+1,
                    result_siamese_csv,
                    *params,
-                   # all_result_time[index-1],
+                   validade_time(all_result_time, index),
                    weighted_average([mrr,mop],[0.5, 0.5]),
+                   weighted_average([mrr,mop],[0.7, 0.3]),
+                   weighted_average([mrr,mop],[0.3, 0.7]),
                    mrr,
                    mop,
-                   all_metrics['MP@1 (Mean Precision at K)']['value'],
-                   all_metrics['MP@1 (Mean Precision at K)']['len'],
+                   #all_metrics['MP@1 (Mean Precision at K)']['value'],
+                   #all_metrics['MP@1 (Mean Precision at K)']['len'],
                    ] 
 
             mrr_results_by_algorithm.append(mrr_result_row)
@@ -501,13 +507,14 @@ def get_metrics(optimization_algorithms, temp):
             df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
             df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
 
+            excel_file = f'results_excel/{algorithm}_{filename_temp}_result.xlsx'
             if index == 0:
-                df_metric.to_excel(f'{algorithm}_result.xlsx', index=False)
+                df_metric.to_excel(excel_file, index=False)
 
             if index != 0:
-                df_final_metric = pd.read_excel(f'{algorithm}_result.xlsx')
+                df_final_metric = pd.read_excel(excel_file)
                 df_metric = pd.concat([df_final_metric, df_metric])
-                df_metric.to_excel(f'{algorithm}_result.xlsx', index=False)
+                df_metric.to_excel(excel_file, index=False)
                 del df_metric
                 del mrr_results_by_algorithm
 

@@ -1,55 +1,68 @@
 import pandas as pd
+import json
 import matplotlib.pyplot as plt
 import statistics
+
 
 def round_values(x):
     return round(x, 4)
 
-metric = 'MRR'
-
 def get_metrics(paths):
-    metrics = []
+    metrics = {}
+    overview = {}
     for file_path in paths:
+        file_path_formatted = file_path.replace(".xlsx", "")
         df = pd.read_excel(file_path)
-        metrics.append(list(map(round_values, df[metric].astype(float).tolist())))
-    return metrics
+        metrics[file_path_formatted] = df[metric].astype(float).tolist()
+        overview[file_path_formatted] = {}
+        overview[file_path_formatted]['max'] = max(metrics[file_path_formatted])
+        overview[file_path_formatted]['min'] = min(metrics[file_path_formatted])
+        overview[file_path_formatted]['median'] = statistics.median(metrics[file_path_formatted])
+    
+    return metrics, overview
 
-mrr_list = get_metrics(['grid_search_result.xlsx',
-             'random_search_result.xlsx',
-             'bayesian_search_result.xlsx',])
+algorithms_labels = ['Grid Search',
+          'Random Search',
+          'Bayesian Search (05,05)',
+          'Bayesian Search (07,03)',
+          'Bayesian Search (03,07)']
 
-grid_search_metric = mrr_list[0]
-random_search_metric = mrr_list[1]
-bayesian_search_metric = mrr_list[2]
+metrics = ['MRR', 'MOP'] # MRR, MOP, WA(MRR,MOP)
+metric_labels = ['Mean Reciprocal Rank (MRR)', 'Mean Overall Precision (MOP)']
 
-colors = ['lightblue', 'lightgreen', '#8A2BE2']
+overview = {}
 
-results_dict = {'Grid Search': mrr_list[0], 'Random Search': mrr_list[1], 'Bayesian Search': mrr_list[2]}
+for i, metric in enumerate(metrics):
 
-fig, axs = plt.subplots()
-axs.boxplot(results_dict.values())
-axs.set_xticklabels(results_dict.keys())
+    results_optimization = [
+        'grid_search_result.xlsx',
+        'random_search_result.xlsx',
+        'bayesian_search_result_05_05.xlsx',
+        'bayesian_search_result_07_03.xlsx',
+        'bayesian_search_result_03_07.xlsx',
+        # 'nsga2_result.xlsx'
+    ]
+    results_dict, overview_metrics = get_metrics(results_optimization)
+    overview[metric] = overview_metrics
+    colors = ['lightblue', 'lightgreen', '#8A2BE2']
+    fig, axs = plt.subplots(figsize=(14, 8))
+    axs.boxplot(results_dict.values())
+    axs.set_xticklabels(['','','','',''], fontsize=20)
+    #plt.xticks(rotation=45)
 
+    #plt.suptitle(f'Siamese - {metric} Results')
+    axs.tick_params(axis='both', labelsize=16)
+    plt.ylabel(metric_labels[i], rotation=90, labelpad=20, fontsize=20, fontweight='bold')
+    #plt.show()
+    plt.savefig(f"results_boxplot/boxplot_{metric}")
+    plt.close('all')
 
-'''axs[0].boxplot(grid_search_metric, patch_artist=True, boxprops=dict(facecolor=colors[0]))
-axs[0].set_title('Grid Search')
+output_file_path = "boxplot.json"
 
-axs[1].boxplot(random_search_metric, patch_artist=True, boxprops=dict(facecolor=colors[1]))
-axs[1].set_title('Random Search')
+with open(output_file_path, "w") as json_file:
+    json.dump(overview, json_file, indent=4)
 
-axs[2].boxplot(bayesian_search_metric, patch_artist=True, boxprops=dict(facecolor=colors[2]))
-axs[2].set_title('Bayesian Search')
-
-for ax in axs:
-    ax.set_xticklabels([''])
-    ax.set_ylabel('MRR')
-    ax.grid(True)'''
-
-plt.suptitle('Siamese - MRR Results')
-plt.show()
-
-
-import statistics
+'''import statistics
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -77,4 +90,4 @@ def generate_table(grid_search_metric, random_search_metric, bayesian_search_met
     
     plt.show()
 
-generate_table(grid_search_metric, random_search_metric, bayesian_search_metric)
+generate_table(grid_search_metric, random_search_metric, bayesian_search_metric)'''

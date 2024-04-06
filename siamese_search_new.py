@@ -91,7 +91,7 @@ def execute_siamese_search(**parms):
     print(f"Count {i}")
     print(f"Combination {parms}")
 
-    command = f'java -jar ./siamese-0.0.6-SNAPSHOT.jar -i {project_path} -cf ./{properties_path}'
+    command = f'java -jar ./siamese-1.0.jar -i {project_path} -cf ./{properties_path}'
     process = subprocess.Popen(command,
                                shell=True,
                                stdout=subprocess.PIPE,
