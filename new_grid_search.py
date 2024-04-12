@@ -75,7 +75,7 @@ def execute_grid_search(combinations):
     for i, combination in enumerate(combinations):
         i += 1
         
-        if i <= 943:
+        if i <= 2672:
             continue
 
         print(f"\n\nCount {i}")

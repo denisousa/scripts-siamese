@@ -8,6 +8,7 @@ import re
 from dotenv import load_dotenv
 import time
 import requests
+import datetime
 load_dotenv()
 
 def clear_cache(port):
@@ -75,7 +76,7 @@ def execute_siamese_search(**parms):
     delete_indices_incorrect(parms["ngramSize"])
     
     port = 9000 + int(parms["ngramSize"])
-    os.system(f'curl -X POST "http://localhost:{port}/_cluster/reroute"')
+    #os.system(f'curl -X POST "http://localhost:{port}/_cluster/reroute"')
 
     properties_path = generate_config_file(parms)
     output_path = parms['output_folder']
@@ -91,7 +92,10 @@ def execute_siamese_search(**parms):
     print(f"Count {i}")
     print(f"Combination {parms}")
 
-    command = f'java -jar ./siamese-0.0.6-SNAPSHOT.jar -i {project_path} -cf ./{properties_path}'
+    print(datetime.datetime.now())
+    print()
+
+    command = f'sudo nice -n -10 java -XX:ParallelGCThreads=10 -Xmx4g -jar ./siamese-0.0.6-SNAPSHOT.jar -i {project_path} -cf ./{properties_path}'
     process = subprocess.Popen(command,
                                shell=True,
                                stdout=subprocess.PIPE,

@@ -5,7 +5,7 @@ optimization_algorithms = [
 ]
 
 temp = [
-    '2024-04-01 10:13:13.495266',
+    '2024-04-01',
 ]
 
 get_metrics(optimization_algorithms, temp)

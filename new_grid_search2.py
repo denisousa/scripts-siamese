@@ -1,4 +1,4 @@
-from siamese_search_new import execute_siamese_search
+from siamese_search import execute_siamese_search
 from datetime import datetime
 from itertools import product
 import yaml
@@ -75,7 +75,7 @@ def execute_grid_search(combinations):
     for i, combination in enumerate(combinations):
         i += 1
         
-        if i <= 113:
+        if i <= 2900:
             continue
 
         print(f"\n\nCount {i}")
@@ -96,7 +96,7 @@ def execute_grid_search(combinations):
     open(result_time_path, 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 param = [
-    [8], # ngram
+    [4, 6, 8], # ngram
     [6, 10], # minCloneSize
     [8, 10], # QRPercentileNorm
     [8, 10], # QRPercentileT2
@@ -111,6 +111,6 @@ param = [
 
 combinations = list(product(*param))
 print(len(combinations))
-current_datetime = '2024-04-04 22:21:53.704721'
+current_datetime = '2024-04-01 10:13:13.495266'
 
 execute_grid_search(combinations)

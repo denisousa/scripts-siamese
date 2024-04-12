@@ -74,7 +74,7 @@ clusters_range = range(initial_quantity, final_quantity)
 
 
 start_time = datetime.datetime.now()
-execute_siamese_index_properties(4)
+execute_siamese_index_properties(8)
 end_time = datetime.datetime.now()
 exec_time = end_time - start_time
 print("Execution time:", exec_time)
