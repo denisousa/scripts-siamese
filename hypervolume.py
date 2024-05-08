@@ -13,7 +13,7 @@ def plot_hypervolume(ref_point, all_excel_path):
         'Bayesian Search (05,05)',
         'Bayesian Search (07,03)',
         'Bayesian Search (03,07)',
-#        'NSGA-II'
+        'NSGA-II'
     ]
 
     plt.figure(figsize=(6, 8))
@@ -86,12 +86,12 @@ def calculate_pareto_front(excel_file_path, metric1, metric2):
 
 
 all_excel_path = [
-#'resume_grid_search_result.xlsx',
+'grid_search_result.xlsx',
 'random_search_result.xlsx',
 'bayesian_search_result_05_05.xlsx',
 'bayesian_search_result_07_03.xlsx',
 'bayesian_search_result_03_07.xlsx',
-#'nsga2_result.xlsx'
+'nsga2_result.xlsx'
 ]
 
 hvs = {}

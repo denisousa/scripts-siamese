@@ -472,7 +472,6 @@ def get_metrics(optimization_algorithms, temp):
         all_result_time = find_lines_with_specific_text(time_path, 'Runtime:')
         for index, result_siamese_csv in enumerate(results_siamese_csv):
             mrr_results_by_algorithm = []
-
             print(index, len(results_siamese_csv), algorithm)
 
             if result_siamese_csv == 'README.md':
@@ -514,13 +513,11 @@ def get_metrics(optimization_algorithms, temp):
             df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
 
             excel_file = f'results_excel/{algorithm}_{filename_temp}_result.xlsx'
-            if index == 0:
-                df_metric.to_excel(excel_file, index=False)
-
-            if index != 0:
+            try:
                 df_final_metric = pd.read_excel(excel_file)
                 df_metric = pd.concat([df_final_metric, df_metric])
                 df_metric.to_excel(excel_file, index=False)
                 del df_metric
                 del mrr_results_by_algorithm
-
+            except:
+                df_metric.to_excel(excel_file, index=False)

@@ -1,5 +1,14 @@
 # Hyperparameter Optimization - Siamese
 
+## DADOS ORIGINAIS
+- Os dados originais que o Chaiyong me mandou em relação ao
+Qualitas Corpus e dump do Stack Overflow estão abaixo:
+
+link:
+email: denismzsousa@gmail.com
+folder: Chaiyong Datasource
+
+
 ## Introduction
 Welcome to the *Hyperparameter Optimization - Siamese* project! This project consists of an infrastructure designed to search for the best hyperparameters that exist in the [Siamese](https://github.com/UCL-CREST/Siamese) tool. Below is the list of hyperparameters that we seek to find the best values for:
 

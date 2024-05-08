@@ -4,6 +4,8 @@
 n-gram-properties/n*
 
 *.zip
+*.png
+*.pdf
 
 my*
 
@@ -24,10 +26,12 @@ backup*/
 configurations_bayesian_search/*
 configurations_grid_search/*
 configurations_random_search/*
+configurations_nsga2/*
 
 output_bayesian_search/*
 output_grid_search/*
 output_random_search/*
+output_nsga2/*
 
 # C extensions
 *.so

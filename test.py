@@ -1,9 +1,3 @@
-'''import pandas as pd
-
-df = pd.read_csv('GRID_SEARCH.csv')
-df.to_excel('resume_grid_search_result.xlsx', index=False)
-'''
-
 import pandas as pd
 import numpy as np
 
@@ -34,6 +28,3 @@ df = pd.DataFrame({"MRR": all_values[0][0], "MOP": all_values[1][0]})
 file_name = 'output.xlsx'
 df.to_excel(file_name, index=False)
 
-'''
-df = pd.read_csv('GRID_SEARCH.csv')
-df.to_excel('resume_grid_search_result.xlsx', index=False)'''
