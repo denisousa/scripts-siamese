@@ -35,9 +35,9 @@ datasource_list = [
     },
 ]
 
-'''for datasource in datasource_list:
+for datasource in datasource_list:
     download_file_from_google_drive(datasource["file_id"], datasource["filename"])
     unzip_file(datasource["filename"], extract_to_path)
-    delete_folder_or_file(datasource["filename"])'''
+    delete_folder_or_file(datasource["filename"])
 
 download_elasticsearch()

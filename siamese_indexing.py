@@ -66,17 +66,10 @@ initial_quantity = int(os.getenv("INITIAL_CLUSTER_QUANTITY"))
 final_quantity = int(os.getenv("FINAL_CLUSTER_QUANTITY")) + 1
 clusters_range = range(initial_quantity, final_quantity)
 
-'''for i in range(9,25):
+for i in range(9,25):
     start_time = datetime.datetime.now()
     execute_siamese_index_properties(i)
     end_time = datetime.datetime.now()
     exec_time = end_time - start_time
     print("Execution time:", exec_time)
-    open('time_execution.txt', 'a').write(f'{exec_time}\n')'''
-
-start_time = datetime.datetime.now()
-execute_siamese_index_properties(4)
-end_time = datetime.datetime.now()
-exec_time = end_time - start_time
-print("Execution time:", exec_time)
-open('time_execution.txt', 'a').write(f'{exec_time}\n')
+    open('time_execution.txt', 'a').write(f'{exec_time}\n')
