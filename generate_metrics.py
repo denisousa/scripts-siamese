@@ -444,8 +444,6 @@ def get_metrics(optimization_algorithms, temp):
         'WA(MRR,MOP) - (0.3,0.7)',
         'MRR',
         'MOP',
-        #'MP@1_VALUE',
-        #'MP@1_LEN',
         ]
 
     df_clones = pd.read_csv('clones_only_QS_EX_UD_NEW.csv')
@@ -503,8 +501,6 @@ def get_metrics(optimization_algorithms, temp):
                    weighted_average([mrr,mop],[0.3, 0.7]),
                    mrr,
                    mop,
-                   #all_metrics['MP@1 (Mean Precision at K)']['value'],
-                   #all_metrics['MP@1 (Mean Precision at K)']['len'],
                    ] 
 
             mrr_results_by_algorithm.append(mrr_result_row)

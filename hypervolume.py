@@ -86,12 +86,12 @@ def calculate_pareto_front(excel_file_path, metric1, metric2):
 
 
 all_excel_path = [
-'grid_search_result.xlsx',
-'random_search_result.xlsx',
-'bayesian_search_result_05_05.xlsx',
-'bayesian_search_result_07_03.xlsx',
-'bayesian_search_result_03_07.xlsx',
-'nsga2_result.xlsx'
+'results_excel/grid_search_result.xlsx',
+'results_excel/random_search_result.xlsx',
+'results_excel/bayesian_search_result_0.5_0.5.xlsx',
+'results_excel/bayesian_search_result_0.7_0.3.xlsx',
+'results_excel/bayesian_search_result_0.3_0.7.xlsx',
+'results_excel/nsga2_result.xlsx'
 ]
 
 hvs = {}
