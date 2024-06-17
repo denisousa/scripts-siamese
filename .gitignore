@@ -27,17 +27,19 @@ backup*/
 *.json
 *.xlsx
 *.xlsx*
-*.txt
+*time_*.txt
 
-configurations_bayesian_search/*
-configurations_grid_search/*
-configurations_random_search/*
-configurations_nsga2/*
+seed.txt
 
-output_bayesian_search/*
-output_grid_search/*
-output_random_search/*
-output_nsga2/*
+configurations_bayesian_search/*properties
+configurations_grid_search/*properties
+configurations_random_search/*properties
+configurations_nsga2/*properties
+
+output_bayesian_search/*2024*
+output_grid_search/*2024*
+output_random_search/*2024*
+output_nsga2/*2024*
 
 # C extensions
 *.so

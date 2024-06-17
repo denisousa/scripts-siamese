@@ -3,7 +3,6 @@ from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
 from parameters_operations import get_parameters_in_dict
 from files_operations import most_recent_file
-import copy
 import json
 import os
 import re

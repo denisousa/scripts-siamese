@@ -48,6 +48,10 @@ def generate_config_file(parms):
     elasticsearch_path = f'{elasticsearch_path}/elasticsearch-ngram-{parms["ngramSize"]}'
 
     config = open('config-search.properties', 'r').read()
+    
+    project_to_search_path = os.getenv('PROJECT_TO_SEARCH')
+    config = config.replace('inputFolder=', f'inputFolder={project_to_search_path}')
+    
     config = config.replace('elasticsearchLoc=', f'elasticsearchLoc={elasticsearch_path}')
     config = config.replace('outputFolder=', f'outputFolder={parms["output_folder"]}')
     config = config.replace('cluster=cluster', f'cluster=stackoverflow')
@@ -81,7 +85,6 @@ def execute_siamese_search(**parms):
     properties_path = generate_config_file(parms)
     output_path = parms['output_folder']
     
-    project_path = os.getenv('PROJECT_TO_SEARCH')
     index_name = os.getenv('INDEX_NAME')
     index_name = f'{index_name}_n_gram_{parms["ngramSize"]}'
 
@@ -95,7 +98,8 @@ def execute_siamese_search(**parms):
     print(datetime.datetime.now())
     print()
 
-    command = f'sudo nice -n -10 java -XX:ParallelGCThreads=10 -Xmx4g -jar ./siamese-0.0.6-SNAPSHOT.jar -i {project_path} -cf ./{properties_path}'
+    #command = f'sudo nice -n -10 java -XX:ParallelGCThreads=10 -Xmx4g -jar ./siamese-0.0.6-SNAPSHOT.jar -i {project_path} -cf {properties_path}'
+    command = f'java -jar ./siamese-0.0.6-SNAPSHOT.jar -cf {properties_path}'
     process = subprocess.Popen(command,
                                shell=True,
                                stdout=subprocess.PIPE,
