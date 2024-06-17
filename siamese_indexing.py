@@ -32,11 +32,9 @@ def execute_siamese_index_properties(ngram):
         os.system(f'trash-put {elasticsearch_path}/elasticsearch-ngram-{ngram}')
 
     create_one_cluster_elasticserach(ngram)
-    #stop_cluster_elasticserach(ngram)
     execute_cluster_elasticserach(ngram)
 
-
-    n_gram_properties_path = "./n-gram-properties"
+    configurations_path = "./configurations_to_index"
 
     index_name = os.getenv("INDEX_NAME")
     index_name = f"{index_name}_n_gram_{ngram}"
@@ -52,7 +50,7 @@ def execute_siamese_index_properties(ngram):
     config = config.replace("ngramSize=", f"ngramSize={ngram}")
     config = config.replace("inputFolder=", f"inputFolder={project_index_path}")
     print(f"CONFIG NAME: {index_name} \n\n")
-    new_config = f"{n_gram_properties_path}/n_gram_{ngram}.properties"
+    new_config = f"{configurations_path}/n_gram_{ngram}.properties"
     open(new_config, "w").write(config)
     command = f"java -jar siamese-0.0.6-SNAPSHOT.jar -cf {new_config}"
     process = subprocess.Popen(
@@ -66,10 +64,12 @@ initial_quantity = int(os.getenv("INITIAL_CLUSTER_QUANTITY"))
 final_quantity = int(os.getenv("FINAL_CLUSTER_QUANTITY")) + 1
 clusters_range = range(initial_quantity, final_quantity)
 
-for i in range(9,25):
+for i in range(initial_quantity, final_quantity):
+    
     start_time = datetime.datetime.now()
     execute_siamese_index_properties(i)
     end_time = datetime.datetime.now()
     exec_time = end_time - start_time
+
     print("Execution time:", exec_time)
     open('time_execution.txt', 'a').write(f'{exec_time}\n')

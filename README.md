@@ -65,3 +65,15 @@ python download_datasource.py
 ### Execution of the Optimization Algorithm
 
 Happy optimizing! 🚀
+
+## Using Java 8
+
+Utilizar o Java 8:
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+
+sudo apt-get install maven
+sudo apt-get install openjdk-8-jdk
+sudo apt purge openjdk-11-*
+java -version
+javac -version
