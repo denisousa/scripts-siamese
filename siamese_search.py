@@ -96,15 +96,15 @@ def execute_siamese_search(**parms):
     print(f"Combination {parms}")
 
     print(datetime.datetime.now())
-    print()
-
     #command = f'sudo nice -n -10 java -XX:ParallelGCThreads=10 -Xmx4g -jar ./siamese-0.0.6-SNAPSHOT.jar -i {project_path} -cf {properties_path}'
+
     command = f'java -jar ./siamese-0.0.6-SNAPSHOT.jar -cf {properties_path}'
     process = subprocess.Popen(command,
                                shell=True,
                                stdout=subprocess.PIPE,
                                stderr=None,
                                close_fds=True)
+
     process.wait()
 
     stdout = process.stdout.read().decode('utf-8')
@@ -118,6 +118,7 @@ def execute_siamese_search(**parms):
 
     siamese_result_filename, siamese_result_text = most_recent_file(output_path)
     format_result_text = re.sub(r'\s', '', siamese_result_text)
+    
     if format_result_text == '':
         os.remove(f'{output_path}/{siamese_result_filename}')
         execute_siamese_search(**parms)

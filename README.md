@@ -77,3 +77,6 @@ sudo apt-get install openjdk-8-jdk
 sudo apt purge openjdk-11-*
 java -version
 javac -version
+
+need install
+sudo apt-get install trash-cli

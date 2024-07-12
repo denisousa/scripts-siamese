@@ -14,7 +14,8 @@ import subprocess
 from elasticsearch_operations import (
     execute_cluster_elasticserach,
     stop_cluster_elasticserach,
-    create_one_cluster_elasticserach
+    create_one_cluster_elasticserach,
+    change_authentication
 )
 from dotenv import load_dotenv
 
@@ -29,12 +30,12 @@ def execute_siamese_index_properties(ngram):
     elastic_base_path = os.getenv("ELASTICSEARCH_CLUSTERS")
     elastic_path = f'{elastic_base_path}/elasticsearch-ngram-{ngram}'
 
-
     if os.path.exists(elastic_path):
         os.system(f'trash-put {elastic_path}')
 
-    create_one_cluster_elasticserach(ngram)
+    create_one_cluster_elasticserach(ngram, elastic_version)
     execute_cluster_elasticserach(ngram)
+    change_authentication(ngram, elastic_version)
 
     configurations_path = "./configurations_to_index"
 
@@ -52,6 +53,7 @@ def execute_siamese_index_properties(ngram):
     print(f"CONFIG NAME: {index_name} \n\n")
     new_config = f"{configurations_path}/n_gram_{ngram}.properties"
     open(new_config, "w").write(config)
+
     command = f"java -jar siamese-0.0.6-SNAPSHOT.jar -cf {new_config}"
     process = subprocess.Popen(
         command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True
@@ -60,17 +62,19 @@ def execute_siamese_index_properties(ngram):
 
     stop_cluster_elasticserach(ngram)
 
+
+def execute_indexing():
+    for i in range(initial_quantity, final_quantity):
+        start_time = datetime.datetime.now()
+        execute_siamese_index_properties(i)
+        end_time = datetime.datetime.now()
+        exec_time = end_time - start_time
+
+        print("Execution time:", exec_time)
+        open('time_execution.txt', 'a').write(f'{exec_time}\n')
+
 initial_quantity = int(os.getenv("INITIAL_CLUSTER_QUANTITY"))
 final_quantity = int(os.getenv("FINAL_CLUSTER_QUANTITY")) + 1
 clusters_range = range(initial_quantity, final_quantity)
-
-for i in range(initial_quantity, final_quantity):
-    
-    start_time = datetime.datetime.now()
-    execute_siamese_index_properties(i)
-    end_time = datetime.datetime.now()
-    exec_time = end_time - start_time
-
-    print("Execution time:", exec_time)
-    open('time_execution.txt', 'a').write(f'{exec_time}\n')
-    break
+#elastic_version = "elasticsearch-8.14.2"
+elastic_version = "elasticsearch-2.2.0"

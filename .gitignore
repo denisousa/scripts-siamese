@@ -31,6 +31,8 @@ backup*/
 
 seed.txt
 
+*.tar.gz
+
 configurations_grid_search/*properties
 configurations_random_search/*properties
 configurations_bayesian_search/*properties

@@ -515,4 +515,4 @@ def get_metrics(optimization_algorithms, temp):
                 del df_metric
                 del mrr_results_by_algorithm
             except:
-                df_metric.to_excel(excel_file, index=False)
+                df_metric.to_excel(excel_file, index=False)  # noqa: F821

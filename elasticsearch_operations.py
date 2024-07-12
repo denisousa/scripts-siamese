@@ -31,7 +31,7 @@ def get_ngram_by_port():
         ngram_by_port[ngram_i] = port
     return ngram_by_port
 
-def create_one_cluster_elasticserach(ngram):
+def create_one_cluster_elasticserach(ngram, folder_name):
     port = 9000 + ngram
     elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
 
@@ -39,19 +39,20 @@ def create_one_cluster_elasticserach(ngram):
         os.makedirs(elasticsearch_path)
 
     command_delete = f'trash-put {elasticsearch_path}/elasticsearch-ngram-{ngram}'
-    command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
-    command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram}'
+    command_unzip = f'tar -xvf {folder_name}.tar.gz -C {elasticsearch_path}'
+    command_rename = f'mv {elasticsearch_path}/{folder_name} {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
 
     #template_content = open('elasticsearch_template_config.txt', 'r').read()
     
-    index_name = os.getenv('INDEX_NAME')
+    #index_name = os.getenv('INDEX_NAME')
     #template_name = os.getenv('ELASTICSEARCH_TEMPLATE')
     #template_content = template_content.replace('TEMPLATE', template_name).replace('INDEX', index_name)
     # elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%\n{template_content}'
     
     #elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}-{ngram}\nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%'
-    elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}_n_gram_{ngram}\nhttp.port: {port}'
+    #elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}_n_gram_{ngram}\nhttp.port: {port}'
+    elasticsearch_yml_content = f'cluster.name: stackoverflow \nhttp.port: {port}'
 
     os.system(command_delete)
     sleep(1)
@@ -63,7 +64,7 @@ def create_one_cluster_elasticserach(ngram):
     open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
     print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram}\n')
 
-def create_clusters_elasticserach():
+def create_clusters_elasticserach(folder_name):
     elasticsearch_path = '../../siamese-optmization/elasticsearch-siamese'
     clusters = [5,7,9,11,13,15,17,19,21,23]
     for ngram_i in clusters:
@@ -73,12 +74,10 @@ def create_clusters_elasticserach():
         shards_per_node = 2
         mem = 2
 
-        command_unzip = f'tar -xvf elasticsearch-2.2.0.tar.gz -C {elasticsearch_path}'
-        command_rename = f'mv {elasticsearch_path}/elasticsearch-2.2.0 {elasticsearch_path}/elasticsearch-ngram-{ngram_i}'
+        command_unzip = f'tar -xvf {folder_name}.tar.gz -C {elasticsearch_path}'
+        command_rename = f'mv {elasticsearch_path}/{folder_name} {elasticsearch_path}/elasticsearch-ngram-{ngram_i}'
         elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/config/elasticsearch.yml'
         elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port}'
-        #elasticsearch_yml_content = f'{elasticsearch_yml_content}\nindex.number_of_shards: {shards}\nindex.number_of_replicas: {replicas}'
-        #elasticsearch_yml_content = f'{elasticsearch_yml_content}\ncluster.routing.allocation.total_shards_per_node: {shards_per_node}'
         elasticsearch_yml_content = f'{elasticsearch_yml_content}\nindices.cache.filter.size: 20%'
         os.system(command_unzip)
         sleep(1)
@@ -113,13 +112,25 @@ def delete_indices_incorrect(ngram):
         os.system(f'curl -sS -X DELETE "http://localhost:{port}/{complete_index_name}" > /dev/null 2>&1')
 
 def execute_cluster_elasticserach(ngram):
-    #elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
     elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
     command_execute = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/bin/elasticsearch -d'
     print(f'EXECUTING elasticsearch-ngram-{ngram}')
     process = subprocess.Popen(command_execute, shell=True, stdout=subprocess.PIPE)
     process.wait()
     sleep(7)
+
+def change_authentication(ngram, folder_name):
+    if "8.14.2" not in folder_name:
+        return None
+ 
+    elasticsearch_path = os.getenv('ELASTICSEARCH_CLUSTERS')
+    elastic_yaml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
+    elastic_yaml_content = open(elastic_yaml_path, 'r').read()
+    elastic_yaml_new_content = elastic_yaml_content.replace('true', 'false')
+    open(elastic_yaml_path, 'w').write(elastic_yaml_new_content)
+    stop_cluster_elasticserach(ngram)
+    sleep(3)
+    execute_cluster_elasticserach(ngram)
 
 def stop_cluster_elasticserach(ngram):
     port = 9000 + ngram
@@ -128,12 +139,12 @@ def stop_cluster_elasticserach(ngram):
     process = subprocess.Popen(command_stop, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     process.wait()
 
-def change_cluster_name(ngram_size):
+def change_cluster_name(ngram_size, folder_name):
     command = f'sudo -S kill $(sudo lsof -t -i :9200)'
     process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stdout=None, stderr=None, close_fds=True)
     process.wait()
 
-    elasticsearch_yml_path = '../../siamese-optmization/elasticsearch-2.2.0/config/elasticsearch.yml'
+    elasticsearch_yml_path = '../../siamese-optmization/{folder_name}/config/elasticsearch.yml'
     pattern = r"cluster\.name:\s*(.*?)\s*\n"
     elasticsearch_yml_text = open(elasticsearch_yml_path, 'r').read()
     cluster_name = re.search(pattern, elasticsearch_yml_text).group(1)
@@ -142,6 +153,6 @@ def change_cluster_name(ngram_size):
     open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_text)
 
 
-    command = f'../../siamese-optmization/elasticsearch-2.2.0/bin/elasticsearch'
+    command = f'../../siamese-optmization/{folder_name}/bin/elasticsearch'
     process = subprocess.Popen(command, shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     process.wait()
