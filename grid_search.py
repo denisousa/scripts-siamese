@@ -105,20 +105,6 @@ param = [
     ['20%,40%,60%,80%', '30%,50%,70%,90%'], # simThreshold 
 ]
 
-param = [
-    [4], # ngram
-    [6], # minCloneSize
-    [10], # QRPercentileNorm
-    [10], # QRPercentileT2
-    [10], # QRPercentileT1
-    [10], # QRPercentileOrig
-    [4], # normBoost
-    [4], # t2Boost
-    [4], # t1Boost
-    [1], # origBoost
-    ['50%,60%,70%,80%'], # simThreshold 
-]
-
 combinations = list(product(*param))
 print(len(combinations))
 current_datetime = datetime.now()

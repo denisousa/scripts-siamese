@@ -26,10 +26,12 @@ def execute_siamese_index_properties(ngram):
     os.system("sync")
 
     project_index_path = os.getenv("PROJECT_TO_INDEX")
-    elasticsearch_path = os.getenv("ELASTICSEARCH_CLUSTERS")
+    elastic_base_path = os.getenv("ELASTICSEARCH_CLUSTERS")
+    elastic_path = f'{elastic_base_path}/elasticsearch-ngram-{ngram}'
 
-    if os.path.exists(f'{elasticsearch_path}/elasticsearch-ngram-{ngram}'):
-        os.system(f'trash-put {elasticsearch_path}/elasticsearch-ngram-{ngram}')
+
+    if os.path.exists(elastic_path):
+        os.system(f'trash-put {elastic_path}')
 
     create_one_cluster_elasticserach(ngram)
     execute_cluster_elasticserach(ngram)
@@ -40,9 +42,7 @@ def execute_siamese_index_properties(ngram):
     index_name = f"{index_name}_n_gram_{ngram}"
 
     config = open("config-index.properties", "r").read()
-    config = config.replace(
-        "elasticsearchLoc=", f"elasticsearchLoc={elasticsearch_path}"
-    )
+    config = config.replace("elasticsearchLoc=", f"elasticsearchLoc={elastic_path}")
     config = config.replace("cluster=", f"cluster=stackoverflow")
     config = config.replace("index=", f"index={index_name}")
     config = config.replace("t1NgramSize=", f"t1NgramSize={ngram}")
@@ -73,3 +73,4 @@ for i in range(initial_quantity, final_quantity):
 
     print("Execution time:", exec_time)
     open('time_execution.txt', 'a').write(f'{exec_time}\n')
+    break

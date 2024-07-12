@@ -31,15 +31,20 @@ backup*/
 
 seed.txt
 
-configurations_bayesian_search/*properties
 configurations_grid_search/*properties
 configurations_random_search/*properties
+configurations_bayesian_search/*properties
 configurations_nsga2/*properties
 
-output_bayesian_search/*2024*
-output_grid_search/*2024*
-output_random_search/*2024*
-output_nsga2/*2024*
+output_grid_search/*202*
+output_random_search/*202*
+output_bayesian_search/*202*
+output_nsga2/*202*
+
+time_record/grid_search/*.txt
+time_record/random_search/*.txt
+time_record/bayesian_search/*.txt
+time_record/nsga2/*.txt
 
 # C extensions
 *.so
