@@ -101,7 +101,7 @@ def find_lines_with_runtime(filename):
 def get_files_in_folder(folder_path):
     files = os.listdir(folder_path)
     file_times = [(os.path.join(folder_path, file), os.path.getctime(os.path.join(folder_path, file))) for file in files]
-    sorted_files = sorted([file[0].split('/')[-1] for file in file_times[:-1]], key=extract_number) 
+    sorted_files = sorted([file[0].split('/')[-1] for file in file_times], key=extract_number) 
     return sorted_files
 
 def check_clone_is_correct(oracle_clones_list, siamese_clone):
@@ -456,6 +456,9 @@ def get_metrics(optimization_algorithms, temp):
 
         if not os.path.exists('results_excel'):
             os.mkdir('results_excel')
+
+        if not os.path.exists(f'result_metrics/{algorithm}'):
+            os.mkdir(f'result_metrics/{algorithm}')
 
         os.mkdir(f'result_metrics/{algorithm}/{filename_temp}')
 

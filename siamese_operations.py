@@ -7,28 +7,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def remove_absolute_path(path, project_ref):
-    only_project_to_search = project_ref.split('/')[-1]
-    clean_path = path.split(only_project_to_search)[-1].split('.java')[0][1:] + '.java'
-    return clean_path 
+def remove_absolute_path(path):
+    return path.split('/')[-1].split('.java')[0] + '.java'
+
+def remove_absolute_path_search_project(path):
+    project_to_index = os.getenv('PROJECT_TO_INDEX') + '/'
+    return path.split(project_to_index)[-1].split('.java')[0] + '.java'
+    #return path.split('/')[-1].split('.java')[0] + '.java'
 
 def get_numbers_from_absolute_path(path):
     return int(path.split("#")[-2]), int(path.split("#")[-1])
 
-def get_method_name(path, project_ref):
-    only_project_to_search = project_ref.split('/')[-1]
-    method_clean = path.split(only_project_to_search)[-1].split('#')[0].split('_')[-1]
-    #return path.split('my_index')[-1].split('#')[0].split('.java')[-1][1:]
-    return method_clean
+def get_method_name(path):
+    return path.split('.java_')[-1].split('#')[0]
 
 def format_clones(search_clone, clone):    
-    clean_path1 = remove_absolute_path(search_clone, os.getenv('PROJECT_TO_SEARCH'))
+    clean_path1 = remove_absolute_path(search_clone)
     start1, end1 = get_numbers_from_absolute_path(search_clone)
-    method1 = get_method_name(search_clone, os.getenv('PROJECT_TO_SEARCH'))
+    method1 = get_method_name(search_clone)
         
-    clean_path2 = remove_absolute_path(clone, os.getenv('PROJECT_TO_INDEX'))
+    clean_path2 = remove_absolute_path_search_project(clone)
     start2, end2 = get_numbers_from_absolute_path(clone)
-    method2 = get_method_name(clone, os.getenv('PROJECT_TO_INDEX'))
+    method2 = get_method_name(clone)
 
     return {
         "file1": clean_path1,
@@ -40,15 +40,6 @@ def format_clones(search_clone, clone):
         "end2": end2,
         "method2": method2
     }
-
-def execute_search_siamese(project):
-    os.system(f'cd Siamese-main && java -jar siamese-0.0.6-SNAPSHOT.jar -c search -i ./my_index/{project}/ -o ./output -cf config.properties')
-
-def execute_index_siamese(project, config_properties):
-    os.system(f'cd Siamese-main && java -jar siamese-0.0.6-SNAPSHOT.jar -c index -i ./my_index/{project}/ -cf {config_properties}')
-
-def get_path_from_project_to_search(path):
-    return path.split('/')[-1]
 
 
 def get_path_from_project_to_index(path):

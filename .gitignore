@@ -3,10 +3,13 @@
 
 n-gram-properties/n*
 
+error_siamese_execution.txt
+
 *.zip
 *.png
 *.pdf
 
+result_metrics/*.csv
 my*
 
 configurations_to_index/*.properties
