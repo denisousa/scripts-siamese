@@ -122,5 +122,4 @@ param = [
 
 
 combinations = list(product(*param))
-print(len(combinations))
 current_datetime = datetime.now()

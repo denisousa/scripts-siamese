@@ -3,8 +3,8 @@ import os
 import subprocess
 from time import sleep
 from dotenv import load_dotenv
-load_dotenv()
 import requests
+load_dotenv()
 
 def put_template(ngram):
     port = 9000 + ngram
@@ -43,15 +43,6 @@ def create_one_cluster_elasticserach(ngram, folder_name):
     command_rename = f'mv {elasticsearch_path}/{folder_name} {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
 
-    #template_content = open('elasticsearch_template_config.txt', 'r').read()
-    
-    #index_name = os.getenv('INDEX_NAME')
-    #template_name = os.getenv('ELASTICSEARCH_TEMPLATE')
-    #template_content = template_content.replace('TEMPLATE', template_name).replace('INDEX', index_name)
-    # elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%\n{template_content}'
-    
-    #elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}-{ngram}\nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port} \nindices.cache.filter.size: 20%'
-    #elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.name: {index_name}_n_gram_{ngram}\nhttp.port: {port}'
     elasticsearch_yml_content = f'cluster.name: stackoverflow \nhttp.port: {port}'
 
     os.system(command_delete)
@@ -63,42 +54,6 @@ def create_one_cluster_elasticserach(ngram, folder_name):
     os.system(command_rename)
     open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
     print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram}\n')
-
-def create_clusters_elasticserach(folder_name):
-    elasticsearch_path = '../../siamese-optmization/elasticsearch-siamese'
-    clusters = [5,7,9,11,13,15,17,19,21,23]
-    for ngram_i in clusters:
-        port = 9000 + ngram_i
-        shards = 4
-        replicas = 1
-        shards_per_node = 2
-        mem = 2
-
-        command_unzip = f'tar -xvf {folder_name}.tar.gz -C {elasticsearch_path}'
-        command_rename = f'mv {elasticsearch_path}/{folder_name} {elasticsearch_path}/elasticsearch-ngram-{ngram_i}'
-        elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/config/elasticsearch.yml'
-        elasticsearch_yml_content = f'cluster.name: stackoverflow \nindex.query.bool.max_clause_count: 8192 \nhttp.port: {port}'
-        elasticsearch_yml_content = f'{elasticsearch_yml_content}\nindices.cache.filter.size: 20%'
-        os.system(command_unzip)
-        sleep(1)
-
-        os.system(command_rename)
-        open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
-
-        elasticsearch_in_bat_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/bin/elasticsearch.in.bat'
-        elasticsearch_in_bat_text = open(elasticsearch_in_bat_path, 'r').read()
-        elasticsearch_in_bat_text = elasticsearch_in_bat_text.replace('ES_MIN_MEM=256m', f'ES_MIN_MEM={mem}g')
-        elasticsearch_in_bat_text = elasticsearch_in_bat_text.replace('ES_MAX_MEM=1g', f'ES_MAX_MEM={mem}g')
-
-        elasticsearch_in_sh_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram_i}/bin/elasticsearch.in.sh'
-        elasticsearch_in_sh_text = open(elasticsearch_in_sh_path, 'r').read()
-        elasticsearch_in_sh_text = elasticsearch_in_sh_text.replace('ES_MIN_MEM=256m', f'ES_MIN_MEM={mem}g')
-        elasticsearch_in_sh_text = elasticsearch_in_sh_text.replace('ES_MAX_MEM=1g', f'ES_MAX_MEM={mem}g')
-
-
-        open(elasticsearch_in_bat_path, 'w').write(elasticsearch_in_bat_text)
-        open(elasticsearch_in_sh_path, 'w').write(elasticsearch_in_sh_text)
-        print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram_i}\n')
 
 def delete_indices_incorrect(ngram):
     port = 9000 + ngram

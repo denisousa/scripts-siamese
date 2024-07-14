@@ -2,7 +2,6 @@ import pandas as pd
 from siamese_operations import format_siamese_output
 from oracle_operations import filter_oracle
 from parameters_operations import get_parameters_in_dict
-from files_operations import most_recent_file
 import json
 import os
 import re
@@ -394,8 +393,8 @@ def calculate_all_metrics(result_siamese_csv, df_siamese, df_clones, folder_resu
     all_op = [result['OP (Overall Precision)'] for result in all_reciprocal_rank['predict_results']]
     mop = sum(all_op)/len(all_op)
     mrr = total_reciprocal_rank/num_queries
-    all_reciprocal_rank[f'MRR (Mean Reciprocal Rank)'] = mrr
-    all_reciprocal_rank[f'MOP (Mean Overall Precision)'] = mop
+    all_reciprocal_rank['MRR (Mean Reciprocal Rank)'] = mrr
+    all_reciprocal_rank['MOP (Mean Overall Precision)'] = mop
 
     with open(f'{folder_result}/{result_siamese_csv}.json', "w") as json_file:
         json.dump(all_reciprocal_rank, json_file, indent=4)
@@ -514,5 +513,5 @@ def get_metrics(optimization_algorithms, temp):
                 df_metric.to_excel(excel_file, index=False)
                 del df_metric
                 del mrr_results_by_algorithm
-            except:
+            except:  # noqa: E722
                 df_metric.to_excel(excel_file, index=False)  # noqa: F821

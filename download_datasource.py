@@ -44,3 +44,5 @@ def download_projects():
         download_file_from_google_drive(datasource["file_id"], datasource["filename"])
         unzip_file(datasource["filename"], extract_to_path)
         delete_folder_or_file(datasource["filename"])
+    
+    download_elasticsearch()

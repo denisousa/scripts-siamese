@@ -10,12 +10,12 @@ def remove_duplicates(original_list):
     unique_tuples = set(tuple_list)
     return [list(item) for item in unique_tuples] 
 
-def generate_all_combinations(all_combinations):
+def generate_all_combinations(all_combinations, param):
     len_all_combinations = len(all_combinations)
     new_all_combinations = []
     
     while True:
-        new_combination = generate_unique_combination(all_combinations)
+        new_combination = generate_unique_combination(all_combinations, param)
         new_all_combinations.append(new_combination)
         all_combinations.append(new_combination)
 
@@ -26,13 +26,13 @@ def generate_all_combinations(all_combinations):
 
     return new_all_combinations
 
-def generate_unique_combination(all_combinations):
+def generate_unique_combination(all_combinations, param):
     while True:
-        combination = generate_combination()
+        combination = generate_combination(param)
         if combination not in all_combinations:
             return combination
 
-def generate_combination():
+def generate_combination(param):
     combination=[random.choice(param['ngram']),
             random.choice(param['minCloneSize']),
             random.choice(param['QRPercentileNorm']),
@@ -104,13 +104,13 @@ def format_dimension(parms):
             'origBoost': parms[9],
             'simThreshold': parms[10]}
 
-def evaluate_tool(parms):
+def evaluate_tool(parms, current_datetime):
     parms = format_dimension(parms)
     parms['algorithm'] = 'random_search'
     parms['output_folder'] = f'output_{parms["algorithm"]}/{current_datetime}'
     execute_siamese_search(**parms)
 
-def execute_random_search(combinations):
+def execute(combinations, current_datetime):
     algorithm = 'random_search'
 
     grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
@@ -123,14 +123,14 @@ def execute_random_search(combinations):
         print(f"Combination {combination}")
         
         start_time = datetime.now()
-        evaluate_tool(combination)
+        evaluate_tool(combination, current_datetime)
         end_time = datetime.now()
         exec_time = end_time - start_time
         total_execution_time = end_time - start_total_time
 
         print(f"Runtime: {exec_time}")
         result_time_path = f'time_record/{algorithm}/{current_datetime}.txt'
-        open(result_time_path, 'a').write(f'Success execution ')
+        open(result_time_path, 'a').write('Success execution ')
         open(result_time_path, 'a').write( f'{combination} \nRuntime: {exec_time}\n\n')
         
         if grid_search_time < total_execution_time:
@@ -141,15 +141,17 @@ def execute_random_search(combinations):
     open(result_time_path, 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 
-with open('parameters_grid_search.yml', 'r') as file:
-    grid_search_params = list(yaml.safe_load(file).values())
+def execute_random_search():
 
-with open('parameters.yml', 'r') as file:
-    param = yaml.safe_load(file)
+    with open('parameters_grid_search.yml', 'r') as file:
+        grid_search_params = list(yaml.safe_load(file).values())
 
-combinations = list(product(*grid_search_params))
-combinations = generate_all_combinations(combinations)
-print(len(combinations))
-current_datetime = datetime.now()
+    with open('parameters.yml', 'r') as file:
+        param = yaml.safe_load(file)
 
-execute_random_search(combinations)
+    combinations = list(product(*grid_search_params))
+    combinations = generate_all_combinations(combinations, param)
+    print(len(combinations))
+    current_datetime = datetime.now()
+
+    execute(combinations, param, current_datetime)
