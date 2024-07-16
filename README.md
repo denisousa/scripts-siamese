@@ -104,3 +104,14 @@ conda install --yes --file requirements.txt
 ## DESCOBERTAS
 
 - Descobri que o Siamese nem sempre vai conseguir realizar sua query e esse é "normal" na ferramenta
+
+Gasto 15H só de espera de 7s segundos entre as execuções do Siamese para executar o experimento como um todo!
+
+# Tempo do Grid utilizando somente os arquivos
+O grid search tem 1536 execuções
+Uma execução está demorando 25s mais ou menos
+
+10H - Executo o grid search
+
+Para repetir o experimento eu tenho que executar...
+50H

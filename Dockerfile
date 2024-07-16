@@ -1,14 +1,10 @@
 FROM python:3.8-slim
 
-WORKDIR /siamese-experiment
+WORKDIR /app
 
-COPY . /siamese-experiment
+COPY . /app
 
-RUN pip install -r /siamese-experiment/requirements.txt
-
-RUN mkdir -p dados
-
-#VOLUME /siamese-experiment/dados
+RUN pip install -r /app/requirements.txt
 
 EXPOSE 5000
 
