@@ -74,6 +74,7 @@ Utilizar o Java 8:
 
 sudo visudo
 username ALL=(ALL) NOPASSWD: ALL
+sudo    ALL=(ALL:ALL) ALL -> Remove %
 
 chmod +x java-install.sh
 
@@ -94,3 +95,12 @@ PROJECT_TO_INDEX=${PROJECTS_PATH}/mini_qualitas_corpus_clean
 PROJECT_TO_SEARCH=${PROJECTS_PATH}/cut_stackoverflow_filtered
 INITIAL_CLUSTER_QUANTITY=4
 FINAL_CLUSTER_QUANTITY=8
+
+
+conda 
+conda install --yes --file requirements.txt
+
+
+## DESCOBERTAS
+
+- Descobri que o Siamese nem sempre vai conseguir realizar sua query e esse é "normal" na ferramenta
