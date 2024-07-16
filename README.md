@@ -69,8 +69,13 @@ Happy optimizing! 🚀
 ## Using Java 8
 
 Utilizar o Java 8:
-sudo update-alternatives --config java
-sudo update-alternatives --config javac
+#sudo update-alternatives --config java
+#sudo update-alternatives --config javac
+
+sudo visudo
+username ALL=(ALL) NOPASSWD: ALL
+
+chmod +x java-install.sh
 
 sudo apt-get install maven
 sudo apt-get install openjdk-8-jdk
@@ -80,3 +85,12 @@ javac -version
 
 need install
 sudo apt-get install trash-cli
+
+## Env Example
+PROJECTS_PATH=./my_projects
+ELASTICSEARCH_CLUSTERS=my_clusters
+INDEX_NAME=qualitas_corpus
+PROJECT_TO_INDEX=${PROJECTS_PATH}/mini_qualitas_corpus_clean
+PROJECT_TO_SEARCH=${PROJECTS_PATH}/cut_stackoverflow_filtered
+INITIAL_CLUSTER_QUANTITY=4
+FINAL_CLUSTER_QUANTITY=8
