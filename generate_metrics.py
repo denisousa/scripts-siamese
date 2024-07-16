@@ -236,20 +236,21 @@ def get_so_clones_from_oracle(df_clones, df_siamese):
         df_not_predict = pd.DataFrame(not_predict_data).sort_values(by='file1')
         df_not_predict = df_not_predict.drop_duplicates(subset=['file1'])
     except:
-        df_inside_predict = pd.DataFrame()
+        df_not_predict = pd.DataFrame()
 
     df_concat_predict = pd.concat([df_exact_predict, df_inside_predict], ignore_index=True)
     
     df_exact_and_inside_predict = df_concat_predict[df_concat_predict.duplicated()]
     
     df_concat_predict = df_concat_predict.drop_duplicates(subset=['file1', 'start1', 'end1'])
+    
     return {
         'correct_predictions': df_concat_predict,
         'exact_predictions': df_exact_predict,
         'inside_predictions': df_inside_predict,
         'exact_inside_predictions': df_exact_and_inside_predict,
-        'not_predictions':df_not_predict
-        }
+        'not_predictions': df_not_predict
+    }
 
 def get_list_items_relevants(df_clones, clones_in_oracle, not_predicted_clones):
     relevants_clones = set()
@@ -469,8 +470,9 @@ def get_metrics(optimization_algorithms, temp):
 
         time_path = f'./time_record/{algorithm}/{filename_temp}.txt'
         all_result_time = find_lines_with_specific_text(time_path, 'Runtime:')
+        mrr_results_by_algorithm = []
+        
         for index, result_siamese_csv in enumerate(results_siamese_csv):
-            mrr_results_by_algorithm = []
             print(index, len(results_siamese_csv), algorithm)
 
             if result_siamese_csv == 'README.md':
@@ -507,14 +509,17 @@ def get_metrics(optimization_algorithms, temp):
             mrr_results_by_algorithm.append(mrr_result_row)
 
             df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
-            df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
-
             excel_file = f'results_excel/{algorithm}_{filename_temp}_result.xlsx'
-            try:
-                df_final_metric = pd.read_excel(excel_file)
-                df_metric = pd.concat([df_final_metric, df_metric])
-                df_metric.to_excel(excel_file, index=False)
-                del df_metric
-                del mrr_results_by_algorithm
-            except:  # noqa: E722
-                df_metric.to_excel(excel_file, index=False)  # noqa: F821
+            df_metric.to_excel(excel_file, index=False)
+
+        '''df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
+
+        excel_file = f'results_excel/{algorithm}_{filename_temp}_result.xlsx'
+        try:
+            df_final_metric = pd.read_excel(excel_file)
+            df_metric = pd.concat([df_final_metric, df_metric])
+            df_metric.to_excel(excel_file, index=False)
+            del df_metric
+            del mrr_results_by_algorithm
+        except:  # noqa: E722
+            df_metric.to_excel(excel_file, index=False)  # noqa: F821'''

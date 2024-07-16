@@ -43,8 +43,15 @@ def create_one_cluster_elasticserach(ngram, folder_name):
     command_rename = f'mv {elasticsearch_path}/{folder_name} {elasticsearch_path}/elasticsearch-ngram-{ngram}'
     elasticsearch_yml_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/config/elasticsearch.yml'
 
+    elasticsearch_in_sh_path = f'{elasticsearch_path}/elasticsearch-ngram-{ngram}/bin/elasticsearch.in.sh'
+
     elasticsearch_yml_content = f'cluster.name: stackoverflow \nhttp.port: {port}'
 
+    #elasticsearch_yml_content = f'cluster.name: stackoverflow \nhttp.port: {port} \nindex.number_of_shards: 5 \nindex.number_of_replicas: 1 \nindex.requests.cache.enable: true'
+    #  26s, 29s, 26s | 27s, 28s, 27s
+
+    #elasticsearch_yml_content = f'cluster.name: stackoverflow \nhttp.port: {port} \nindex.number_of_shards: 1 \nindex.number_of_replicas: 0'
+    #  25s, 30s, 21s, 24s = green status
     os.system(command_delete)
     sleep(1)
 
@@ -53,6 +60,11 @@ def create_one_cluster_elasticserach(ngram, folder_name):
 
     os.system(command_rename)
     open(elasticsearch_yml_path, 'w').write(elasticsearch_yml_content)
+
+    elasticsearch_content = open(elasticsearch_in_sh_path, 'r').read()
+    elasticsearch_new_content = elasticsearch_content.replace('256m', '4g').replace('1g', '6g')
+    open(elasticsearch_in_sh_path, 'w').write(elasticsearch_new_content)
+
     print(f'\nCREATE ELASTICSEARCH elasticsearch-ngram-{ngram}\n')
 
 def delete_indices_incorrect(ngram):
@@ -93,6 +105,8 @@ def stop_cluster_elasticserach(ngram):
     print(f'STOP elasticsearch-ngram-{ngram}')
     process = subprocess.Popen(command_stop, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     process.wait()
+    #os.system(f'kill -9 $(lsof -t -i:{port})')
+
 
 def change_cluster_name(ngram_size, folder_name):
     command = f'sudo -S kill $(sudo lsof -t -i :9200)'

@@ -33,9 +33,9 @@ def execute_siamese_index_properties(ngram):
     if os.path.exists(elastic_path):
         os.system(f'trash-put {elastic_path}')
 
+    stop_cluster_elasticserach(ngram)
     create_one_cluster_elasticserach(ngram, elastic_version)
     execute_cluster_elasticserach(ngram)
-    change_authentication(ngram, elastic_version)
 
     configurations_path = "./configurations_to_index"
 
