@@ -30,7 +30,7 @@ nn_regressor_pipeline_mop, _ = get_nn_regressor_pipeline('mop', X, y_mop, prepro
 
 new_parameters = {
     'ngramSize': 10,
-    'cloneSize': 13,
+    'minCloneSize': 13,
     'QRPercentileNorm': 10,
     'QRPercentileT2': 20,
     'QRPercentileT1': 18,

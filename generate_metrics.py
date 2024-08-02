@@ -427,14 +427,14 @@ def get_metrics(optimization_algorithms, temp):
         'execution',
         'filename',
         'ngramSize',
-        'cloneSize',
+        'minCloneSize',
         'QRPercentileNorm',
         'QRPercentileT2',
         'QRPercentileT1',
         'QRPercentileOrig',
         'normBoost',
-        'T2Boost',
-        'T1Boost',
+        't2Boost',
+        't1Boost',
         'origBoost',
         'simThreshold',
         'time',
@@ -511,15 +511,3 @@ def get_metrics(optimization_algorithms, temp):
             df_metric = pd.DataFrame(mrr_results_by_algorithm, columns=columns)
             excel_file = f'results_excel/{algorithm}_{filename_temp}_result.xlsx'
             df_metric.to_excel(excel_file, index=False)
-
-        '''df_metric.loc[len(df_metric)] = [None for _ in range(len(columns))]
-
-        excel_file = f'results_excel/{algorithm}_{filename_temp}_result.xlsx'
-        try:
-            df_final_metric = pd.read_excel(excel_file)
-            df_metric = pd.concat([df_final_metric, df_metric])
-            df_metric.to_excel(excel_file, index=False)
-            del df_metric
-            del mrr_results_by_algorithm
-        except:  # noqa: E722
-            df_metric.to_excel(excel_file, index=False)  # noqa: F821'''

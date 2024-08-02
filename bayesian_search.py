@@ -101,7 +101,7 @@ def execute_bayesian_search():
     
     print(f'FINAL RESULT: {result}')
 
-columns_parms = ['cloneSize',
+columns_parms = ['minCloneSize',
         'ngramSize',
         'QRPercentileNorm',
         'QRPercentileT2',

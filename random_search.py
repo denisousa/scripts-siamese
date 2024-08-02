@@ -1,9 +1,14 @@
+from models.random_forest_regressor_algorithm import get_forest_regressor_pipeline
+from models.xgboost_algorithm import get_xgboost_pipeline
 from siamese_search import execute_siamese_search
+from models.read_data import generate_model_data
 from datetime import datetime, timedelta
 from itertools import product
 import random
 import yaml
 import re
+import os
+
 
 def remove_duplicates(original_list):
     tuple_list = [tuple(sublist) for sublist in original_list]
@@ -48,7 +53,7 @@ def generate_combination(param):
     return combination
 
 def cofigure_text(text):
-    text = text.replace('cloneSize-','')
+    text = text.replace('minCloneSize-','')
     text = text.replace('ngramSize-','')
     text = text.replace('qrNorm-','')
     text = text.replace('normBoost-','')
@@ -104,10 +109,19 @@ def format_dimension(parms):
             'origBoost': parms[9],
             'simThreshold': parms[10]}
 
-def evaluate_tool(parms, current_datetime):
+def evaluate_tool(parms, current_datetime, models):
     parms = format_dimension(parms)
     parms['algorithm'] = 'random_search'
     parms['output_folder'] = f'output_{parms["algorithm"]}/{current_datetime}'
+    parms['logic_process'] = os.getenv('LOGIC_PROCESS')
+
+    if not os.path.exists(parms['output_folder']):
+        os.makedirs(parms['output_folder'])
+    
+    if parms['logic_process'] == 'models':
+        parms['mrr_model'] = models['mrr_model']
+        parms['mop_model'] = models['mop_model']
+    
     execute_siamese_search(**parms)
 
 def execute(combinations, current_datetime):
@@ -116,6 +130,13 @@ def execute(combinations, current_datetime):
     grid_search_time = timedelta(days=2, hours=6, minutes=10, seconds=49)
     start_total_time = datetime.now()
 
+    if os.getenv('LOGIC_PROCESS') == 'models':
+        X, y_mrr, y_mop, preprocessor = generate_model_data()
+        models = {
+            'mrr_model': get_forest_regressor_pipeline('mrr', X, y_mrr, preprocessor),
+            'mop_model': get_xgboost_pipeline('mop', X, y_mop, preprocessor)
+        }
+
     for i, combination in enumerate(combinations):
         i += 1
 
@@ -123,7 +144,7 @@ def execute(combinations, current_datetime):
         print(f"Combination {combination}")
         
         start_time = datetime.now()
-        evaluate_tool(combination, current_datetime)
+        evaluate_tool(combination, current_datetime, models)
         end_time = datetime.now()
         exec_time = end_time - start_time
         total_execution_time = end_time - start_total_time
@@ -136,13 +157,11 @@ def execute(combinations, current_datetime):
         if grid_search_time < total_execution_time:
             break
 
-
     print(f"Total execution time: {total_execution_time}")
     open(result_time_path, 'a').write(f"\nTotal execution time: {total_execution_time}\n")
 
 
 def execute_random_search():
-
     with open('parameters_grid_search.yml', 'r') as file:
         grid_search_params = list(yaml.safe_load(file).values())
 
@@ -154,4 +173,4 @@ def execute_random_search():
     print(len(combinations))
     current_datetime = datetime.now()
 
-    execute(combinations, param, current_datetime)
+    execute(combinations, current_datetime)

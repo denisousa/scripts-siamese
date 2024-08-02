@@ -4,7 +4,7 @@ from itertools import product
 import re
 
 def cofigure_text(text):
-    text = text.replace('cloneSize-','')
+    text = text.replace('minCloneSize-','')
     text = text.replace('ngramSize-','')
     text = text.replace('qrNorm-','')
     text = text.replace('normBoost-','')
@@ -21,7 +21,7 @@ def extract_numbers(text):
 def get_parameters_in_dict(text):
     numbers = [int(i) for i in extract_numbers(text)]
     return {
-        "cloneSize": numbers[0],
+        "minCloneSize": numbers[0],
         "ngramSize": numbers[1],
         "qrNorm": numbers[2],
         "normBoost": numbers[3],
@@ -33,7 +33,7 @@ def get_parameters_in_dict(text):
 def get_parameters_in_list(text):
     numbers = [int(i) for i in extract_numbers(text)]
     return {
-        "cloneSize": numbers[0],
+        "minCloneSize": numbers[0],
         "ngramSize": numbers[1],
         "qrNorm": numbers[2],
         "normBoost": numbers[3],
@@ -49,7 +49,7 @@ def get_combination(text):
 
 def format_dimension(parms):
     return {'ngramSize' : parms[0],
-            'minCloneSize' : parms[1],
+            'minminCloneSize' : parms[1],
             'QRPercentileNorm' : parms[2],
             'QRPercentileT2' : parms[3],
             'QRPercentileT1' : parms[4],
@@ -94,7 +94,7 @@ def execute_grid_search():
 
 param = [
     [4, 6, 8], # ngram
-    [6, 10], # minCloneSize
+    [6, 10], # minminCloneSize
     [8, 10], # QRPercentileNorm
     [8, 10], # QRPercentileT2
     [8, 10], # QRPercentileT1

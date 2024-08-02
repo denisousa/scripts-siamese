@@ -7,6 +7,7 @@ import gc
 import re
 from dotenv import load_dotenv
 import time
+import pandas as pd
 import requests
 import datetime
 load_dotenv()
@@ -75,6 +76,13 @@ def generate_config_file(parms):
     return properties_path
 
 def execute_siamese_search(**parms):
+    if parms['logic_process'] == 'siamese':
+        siamese_logic(**parms)
+
+    if parms['logic_process'] == 'models':
+        model_logic(**parms)
+
+def siamese_logic(**parms):
     stop_cluster_elasticserach(parms["ngramSize"])
     execute_cluster_elasticserach(parms["ngramSize"])
     delete_indices_incorrect(parms["ngramSize"])
@@ -125,3 +133,42 @@ def execute_siamese_search(**parms):
 
     stop_cluster_elasticserach(parms["ngramSize"])
     finish_siamese_process(output_path, properties_path)
+
+
+def model_logic(**parms):
+    parms_combination = {k: v for k, v in parms.items() if k in get_parameters()}
+
+    new_parameters_df = pd.DataFrame([parms_combination])
+    parms_combination['mrr'] = parms['mrr_model'][0].predict(new_parameters_df)
+    parms_combination['mop'] = parms['mop_model'][0].predict(new_parameters_df)
+
+    #new_line = {k: [v] for k, v in parms.items()}
+    new_df = pd.DataFrame(parms_combination)
+
+    filename = f'{parms['output_folder']}/result.csv'
+    if os.path.exists(filename):
+        existing_df = pd.read_csv(filename)
+        combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+    else:
+        combined_df = new_df
+
+
+    combined_df.to_csv(filename, index=False)
+
+def get_parameters():
+    return [
+        'ngramSize',
+        'minCloneSize',
+        'QRPercentileNorm',
+        'QRPercentileT2',
+        'QRPercentileT1',
+        'QRPercentileOrig',
+        'normBoost',
+        't2Boost',
+        't1Boost',
+        'origBoost',
+        'simThreshold'
+    ]
+
+
+    
